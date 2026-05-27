@@ -1,65 +1,109 @@
-import Image from "next/image";
+import GameGrid from "@/components/GameGrid";
 
 export default function Home() {
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
+    <div className="min-h-screen bg-cream">
+      {/* nav */}
+      <nav className="sticky top-0 z-40 bg-cream/80 backdrop-blur border-b border-border">
+        <div className="max-w-4xl mx-auto px-6 h-14 flex items-center justify-between">
+          <span className="font-bold text-charcoal tracking-wide">🌿 治愈小屋</span>
+          <div className="flex items-center gap-6 text-sm font-semibold text-muted">
+            <a href="#games" className="hover:text-mint-600 transition-colors">游戏</a>
+            <a href="#about" className="hover:text-mint-600 transition-colors">关于</a>
+            <a
+              href="https://www.etsy.com/au/shop/StudioSarahDigital"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-4 py-1.5 rounded-full bg-mint-400 text-white hover:bg-mint-500 transition-colors shadow-sm"
+            >
+              我们的小店 ↗
+            </a>
+          </div>
+        </div>
+      </nav>
+
+      <main className="max-w-4xl mx-auto px-6 pb-24">
+
+        {/* hero */}
+        <section className="py-20 text-center">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-mint-100 text-mint-700 text-sm font-semibold mb-6 border border-mint-200">
+            ✨ 慢下来，玩一玩
+          </div>
+          <h1 className="text-5xl font-bold text-charcoal leading-tight mb-5">
+            治愈小屋
+            <span className="block text-2xl font-normal text-muted mt-2 tracking-wide">
+              Healing Corner
+            </span>
           </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+          <p className="text-muted text-lg max-w-md mx-auto leading-relaxed">
+            一个小小的角落，装着几个轻轻的游戏。<br />
+            听声音、深呼吸、点泡泡、接落叶。<br />
+            没有压力，只是放松。
           </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
+          <div className="flex justify-center gap-3 mt-8 text-3xl">
+            {["🎧","🌬️","🫧","🍃"].map((e, i) => (
+              <span
+                key={i}
+                className="w-14 h-14 rounded-2xl bg-white border border-border flex items-center justify-center shadow-sm"
+                style={{ animationDelay: `${i * 0.2}s` }}
+              >
+                {e}
+              </span>
+            ))}
+          </div>
+        </section>
+
+        {/* games */}
+        <section id="games" className="mb-24">
+          <h2 className="text-2xl font-bold text-charcoal mb-2">选一个游戏 🎮</h2>
+          <p className="text-muted text-sm mb-8">点击任意一个，就可以开始了</p>
+          <GameGrid />
+        </section>
+
+        {/* about */}
+        <section id="about" className="border-t border-border pt-16">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-12 items-start">
+
+            <div>
+              <h2 className="text-2xl font-bold text-charcoal mb-4">关于我们 🌸</h2>
+              <p className="text-muted leading-relaxed mb-4">
+                我们是来自塔斯马尼亚的创作者小组。这个小屋是用来放慢节奏的——
+                在快节奏的世界里找一点轻盈的时刻。
+              </p>
+              <p className="text-muted leading-relaxed mb-6">
+                游戏会慢慢增加。每一个都是精心做的小东西，希望能让你安静一会儿。
+              </p>
+              <div className="flex flex-col gap-3 text-sm text-muted">
+                <span>🐦 YouTube · <a href="https://youtube.com/@SomeWhereQuiet611" target="_blank" rel="noopener noreferrer" className="text-mint-600 hover:underline">@SomeWhereQuiet611</a></span>
+                <span>✍️ 博客 · <a href="https://bloomlikecrocus.com" target="_blank" rel="noopener noreferrer" className="text-mint-600 hover:underline">bloomlikecrocus.com</a></span>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-3xl border border-border p-6 shadow-sm">
+              <div className="text-2xl mb-3">🛍️</div>
+              <h3 className="font-bold text-charcoal text-lg mb-2">StudioSarahDigital</h3>
+              <p className="text-muted text-sm leading-relaxed mb-5">
+                我们在 Etsy 开了一家数字产品小店。有健康规划册、DBS 术后康复手册、
+                儿童贴纸，还有更多在路上。每一件都是用心做的。
+              </p>
+              <a
+                href="https://www.etsy.com/au/shop/StudioSarahDigital"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-mint-400 text-white font-bold text-sm hover:bg-mint-500 transition-colors shadow-md"
+              >
+                逛逛我们的小店 ↗
+              </a>
+            </div>
+
+          </div>
+        </section>
+
       </main>
+
+      <footer className="border-t border-border py-8 text-center text-xs text-muted/60 tracking-wide">
+        🌱 慢慢来，总会好的 · StudioSarahDigital · Tasmania
+      </footer>
     </div>
   );
 }
