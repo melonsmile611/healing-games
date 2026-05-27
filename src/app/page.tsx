@@ -130,7 +130,11 @@ export default function Home() {
             </div>
 
             <div className="bg-white rounded-3xl border border-border p-6 shadow-sm">
-              <div className="text-2xl mb-3">🛍️</div>
+              <img
+                src="https://pub-9231efe19a5243b79b24e44c1e722520.r2.dev/healing-hut/mid-jouney/SDlogo.png"
+                alt="StudioSarahDigital"
+                className="w-20 h-20 object-contain mb-3"
+              />
               <h3 className="font-serif text-xl text-charcoal mb-2">StudioSarahDigital</h3>
               <p className="text-muted text-sm leading-relaxed mb-5">
                 Our little Etsy shop for digital products — wellness planners, a DBS recovery handbook,
