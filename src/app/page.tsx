@@ -1,6 +1,6 @@
 import GameGrid from "@/components/GameGrid";
 
-const HERO_BG = "https://pub-9231efe19a5243b79b24e44c1e722520.r2.dev/healing-hut/mid-jouney/Tinaking611_A_soft_anime_aesthetic_illustration_of_a_young_wo_84e979c3-7c09-468d-86aa-76192fce7738_0.png";
+const HERO_BG = "https://pub-9231efe19a5243b79b24e44c1e722520.r2.dev/healing-hut/mid-jouney/Tinaking611_A_soft_anime_aesthetic_illustration_of_the_interi_de59075f-85ce-4fce-aca1-14488eeb72cd_3.png";
 
 const SPARKLES = [
   { top: "10%", left:  "6%", delay: "0s",    size: 5 },
