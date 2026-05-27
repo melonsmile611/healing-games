@@ -22,8 +22,11 @@
   --color-muted:    #6d8c7e;
   --color-border:   #c8e6d8;
 
-  --font-sans: var(--font-nunito);
+  --font-sans:  var(--font-nunito);
+  --font-serif: var(--font-serif);
 }
+
+.font-serif { font-family: var(--font-serif), 'Georgia', serif; }
 
 * { box-sizing: border-box; }
 

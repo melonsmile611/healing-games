@@ -36,7 +36,7 @@ export default function GameGrid() {
             `}
           >
             <span className="text-4xl block mb-3">{g.icon}</span>
-            <h3 className="font-bold text-charcoal text-lg leading-tight">{g.titleZh}</h3>
+            <h3 className="font-bold text-charcoal text-lg leading-tight">{g.title}</h3>
             <p className="text-muted text-sm mt-1 mb-4 leading-relaxed">{g.desc}</p>
             <span className="inline-block px-3 py-1 rounded-full text-xs font-bold bg-mint-50 text-mint-600 border border-mint-200">
               {g.tag}
@@ -60,8 +60,7 @@ export default function GameGrid() {
               <div className="flex items-center gap-3">
                 <span className="text-3xl">{activeGame.icon}</span>
                 <div>
-                  <h2 className="font-bold text-charcoal text-lg leading-tight">{activeGame.titleZh}</h2>
-                  <p className="text-muted text-xs">{activeGame.title}</p>
+                  <h2 className="font-bold text-charcoal text-lg leading-tight">{activeGame.title}</h2>
                 </div>
               </div>
               <button

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Nunito } from "next/font/google";
+import { Nunito, DM_Serif_Display } from "next/font/google";
 import "./globals.css";
 
 const nunito = Nunito({
@@ -8,14 +8,20 @@ const nunito = Nunito({
   weight: ["300", "400", "600", "700"],
 });
 
+const serif = DM_Serif_Display({
+  variable: "--font-serif",
+  subsets: ["latin"],
+  weight: "400",
+});
+
 export const metadata: Metadata = {
-  title: "治愈小屋 · Healing Corner",
+  title: "Healing Corner",
   description: "Mini healing games to help you slow down — sound mystery box, breathing, bubbles, and more.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="zh" className={nunito.variable}>
+    <html lang="en" className={`${nunito.variable} ${serif.variable}`}>
       <body className="min-h-screen flex flex-col">{children}</body>
     </html>
   );

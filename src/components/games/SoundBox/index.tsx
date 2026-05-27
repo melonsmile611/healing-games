@@ -97,13 +97,13 @@ export default function SoundBox() {
       <div className="flex flex-col items-center gap-7 py-4">
         <MysteryBox playing={false} answered={false} correct={false} revealIcon="" onClick={() => {}} />
         <p className="text-muted text-sm text-center max-w-xs leading-relaxed">
-          听一段神秘声音，猜猜它是什么？<br />答对三次就过关，共三关。
+          Listen to a mystery sound and guess what it is.<br />Get 3 right to pass each level. Three levels total.
         </p>
         <button
           onClick={() => pickSound(0, [])}
           className="px-9 py-3 rounded-full bg-mint-400 text-white font-bold text-lg hover:bg-mint-500 transition-colors shadow-lg"
         >
-          开始闯关 🎧
+          Start Playing 🎧
         </button>
       </div>
     );
@@ -128,7 +128,7 @@ export default function SoundBox() {
           {level.label}
         </span>
         <ProgressPips correct={correctInLevel} toPass={level.toPass} />
-        <span className="text-xs text-muted">总分 {totalScore}</span>
+        <span className="text-xs text-muted">Score {totalScore}</span>
       </div>
 
       <p className="text-xs text-muted italic">{level.desc}</p>
@@ -153,7 +153,7 @@ export default function SoundBox() {
       <div className="h-7 flex items-center justify-center">
         {answered && (
           <p className={`text-sm font-bold ${isCorrect ? "text-mint-600" : "text-blush"}`}>
-            {isCorrect ? `✨ 答对了！是${snd.name}` : `是${snd.icon} ${snd.name} 哦 ~`}
+            {isCorrect ? `✨ Correct! It's ${snd.name}` : `It's ${snd.icon} ${snd.name}`}
           </p>
         )}
       </div>
@@ -182,7 +182,7 @@ export default function SoundBox() {
           onClick={() => pickSound(levelIdx, usedInLevel)}
           className="mt-1 px-6 py-2 rounded-full bg-mint-400 text-white font-bold text-sm hover:bg-mint-500 transition-colors shadow"
         >
-          再来一题 →
+          Try another →
         </button>
       )}
     </div>

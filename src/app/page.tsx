@@ -6,18 +6,18 @@ export default function Home() {
       {/* nav */}
       <nav className="sticky top-0 z-40 bg-cream/80 backdrop-blur border-b border-border">
         <div className="max-w-4xl mx-auto px-6 h-14 flex items-center justify-between">
-          <span className="font-bold text-charcoal tracking-wide">🌿 治愈小屋</span>
+          <span className="font-bold text-charcoal tracking-wide">🌿 Healing Corner</span>
           <div className="flex items-center gap-6 text-sm font-semibold text-muted">
-            <a href="#games" className="hover:text-mint-600 transition-colors">游戏</a>
-            <a href="#about" className="hover:text-mint-600 transition-colors">关于</a>
-            <a href="https://www.somewhere-quiet.com" target="_blank" rel="noopener noreferrer" className="hover:text-mint-600 transition-colors">树洞 ↗</a>
+            <a href="#games" className="hover:text-mint-600 transition-colors">Games</a>
+            <a href="#about" className="hover:text-mint-600 transition-colors">About</a>
+            <a href="https://www.somewhere-quiet.com" target="_blank" rel="noopener noreferrer" className="hover:text-mint-600 transition-colors">Tree Hole ↗</a>
             <a
               href="https://www.etsy.com/au/shop/StudioSarahDigital"
               target="_blank"
               rel="noopener noreferrer"
               className="px-4 py-1.5 rounded-full bg-mint-400 text-white hover:bg-mint-500 transition-colors shadow-sm"
             >
-              我们的小店 ↗
+              Our Shop ↗
             </a>
           </div>
         </div>
@@ -28,18 +28,15 @@ export default function Home() {
         {/* hero */}
         <section className="py-20 text-center">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-mint-100 text-mint-700 text-sm font-semibold mb-6 border border-mint-200">
-            ✨ 慢下来，玩一玩
+            ✨ Slow down. Play a little.
           </div>
-          <h1 className="text-5xl font-bold text-charcoal leading-tight mb-5">
-            治愈小屋
-            <span className="block text-2xl font-normal text-muted mt-2 tracking-wide">
-              Healing Corner
-            </span>
+          <h1 className="font-serif text-6xl text-charcoal leading-tight mb-4">
+            Healing Corner
           </h1>
           <p className="text-muted text-lg max-w-md mx-auto leading-relaxed">
-            一个小小的角落，装着几个轻轻的游戏。<br />
-            听声音、深呼吸、点泡泡、接落叶。<br />
-            没有压力，只是放松。
+            A little corner with gentle games.<br />
+            Listen, breathe, pop, catch.<br />
+            No pressure — just a moment to rest.
           </p>
           <div className="flex justify-center gap-3 mt-8 text-3xl">
             {["🎧","🌬️","🫧","🍃"].map((e, i) => (
@@ -56,8 +53,8 @@ export default function Home() {
 
         {/* games */}
         <section id="games" className="mb-24">
-          <h2 className="text-2xl font-bold text-charcoal mb-2">选一个游戏 🎮</h2>
-          <p className="text-muted text-sm mb-8">点击任意一个，就可以开始了</p>
+          <h2 className="font-serif text-3xl text-charcoal mb-2">Pick a game 🎮</h2>
+          <p className="text-muted text-sm mb-8">Tap any one to begin</p>
           <GameGrid />
         </section>
 
@@ -66,7 +63,7 @@ export default function Home() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-12 items-start">
 
             <div>
-              <h2 className="text-2xl font-bold text-charcoal mb-4">关于我们 🌸</h2>
+              <h2 className="font-serif text-3xl text-charcoal mb-4">About Us 🌸</h2>
               <p className="text-muted leading-relaxed mb-4">
                 We live in Tasmania — the southern end of the island, closer to Antarctica than to Sydney.
                 There's no grand reason for this place. We just wanted somewhere to not think about anything for a bit.
@@ -75,7 +72,7 @@ export default function Home() {
                 More games will come. No rush.
               </p>
               <div className="flex flex-col gap-3 text-sm text-muted">
-                <span>🌿 树洞 · <a href="https://www.somewhere-quiet.com" target="_blank" rel="noopener noreferrer" className="text-mint-600 hover:underline">somewhere-quiet.com</a></span>
+                <span>🌿 Tree Hole · <a href="https://www.somewhere-quiet.com" target="_blank" rel="noopener noreferrer" className="text-mint-600 hover:underline">somewhere-quiet.com</a></span>
                 <span>🐦 YouTube · <a href="https://youtube.com/@SomeWhereQuiet611" target="_blank" rel="noopener noreferrer" className="text-mint-600 hover:underline">@SomeWhereQuiet611</a></span>
                 <span>🛒 Gumroad · <a href="https://studioSarahDigital.gumroad.com" target="_blank" rel="noopener noreferrer" className="text-mint-600 hover:underline">studioSarahDigital.gumroad.com</a></span>
               </div>
@@ -83,10 +80,10 @@ export default function Home() {
 
             <div className="bg-white rounded-3xl border border-border p-6 shadow-sm">
               <div className="text-2xl mb-3">🛍️</div>
-              <h3 className="font-bold text-charcoal text-lg mb-2">StudioSarahDigital</h3>
+              <h3 className="font-serif text-xl text-charcoal mb-2">StudioSarahDigital</h3>
               <p className="text-muted text-sm leading-relaxed mb-5">
-                我们在 Etsy 开了一家数字产品小店。有健康规划册、DBS 术后康复手册、
-                儿童贴纸，还有更多在路上。每一件都是用心做的。
+                Our little Etsy shop for digital products — wellness planners, a DBS recovery handbook,
+                kids name stickers, and more on the way. Each one made with care.
               </p>
               <a
                 href="https://www.etsy.com/au/shop/StudioSarahDigital"
@@ -94,7 +91,7 @@ export default function Home() {
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-mint-400 text-white font-bold text-sm hover:bg-mint-500 transition-colors shadow-md"
               >
-                逛逛我们的小店 ↗
+                Visit our shop ↗
               </a>
             </div>
 
@@ -104,7 +101,7 @@ export default function Home() {
       </main>
 
       <footer className="border-t border-border py-8 text-center text-xs text-muted/60 tracking-wide">
-        🌱 慢慢来，总会好的 · StudioSarahDigital · Tasmania
+        🌱 Take it slow · StudioSarahDigital · Tasmania
       </footer>
     </div>
   );

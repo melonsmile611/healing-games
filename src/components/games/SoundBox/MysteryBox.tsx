@@ -99,7 +99,7 @@ export default function MysteryBox({ playing, answered, correct, revealIcon, onC
 
       <span className="mt-2.5 text-[11px] font-bold uppercase tracking-widest transition-colors duration-300"
         style={{ color: playing && !answered ? "#33a082" : "#6d8c7e" }}>
-        {answered ? "已揭晓" : playing ? "正在播放…" : "点击播放 ▶"}
+        {answered ? "Revealed" : playing ? "Playing…" : "Tap to play ▶"}
       </span>
     </button>
   );

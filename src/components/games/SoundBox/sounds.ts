@@ -11,14 +11,14 @@ export interface Sound {
 }
 
 export const SOUNDS: Sound[] = [
-  { name: "下雨声",   icon: "🌧️", make: makeRain       },
-  { name: "打字声",   icon: "⌨️", make: makeTyping     },
-  { name: "风铃声",   icon: "🎐", make: makeWindChimes  },
-  { name: "鸟叫声",   icon: "🐦", make: makeBirds      },
-  { name: "猫咪呼噜", icon: "😺", make: makePurr       },
-  { name: "海浪声",   icon: "🌊", make: makeOcean      },
-  { name: "篝火声",   icon: "🔥", make: makeFireplace  },
-  { name: "河流声",   icon: "💧", make: makeStream     },
-  { name: "风吹树叶", icon: "🌿", make: makeWind       },
-  { name: "蜜蜂嗡嗡", icon: "🐝", make: makeBees       },
+  { name: "Rain",          icon: "🌧️", make: makeRain       },
+  { name: "Typing",        icon: "⌨️", make: makeTyping     },
+  { name: "Wind Chimes",   icon: "🎐", make: makeWindChimes  },
+  { name: "Birds",         icon: "🐦", make: makeBirds      },
+  { name: "Cat Purring",   icon: "😺", make: makePurr       },
+  { name: "Ocean Waves",   icon: "🌊", make: makeOcean      },
+  { name: "Campfire",      icon: "🔥", make: makeFireplace  },
+  { name: "River Stream",  icon: "💧", make: makeStream     },
+  { name: "Rustling Leaves", icon: "🌿", make: makeWind    },
+  { name: "Buzzing Bees",  icon: "🐝", make: makeBees       },
 ];
