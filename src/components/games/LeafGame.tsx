@@ -147,8 +147,8 @@ export default function LeafGame() {
         }}
       />
       <p className="text-center text-sm font-semibold text-charcoal/70">
-        接住 <span className="text-mint-600 font-bold">{caught}</span> 片 ·
-        错过 <span className="text-blush font-bold">{missed}</span> 片 🍃
+        Caught <span className="text-mint-600 font-bold">{caught}</span> ·
+        Missed <span className="text-blush font-bold">{missed}</span> 🍃
       </p>
     </div>
   );

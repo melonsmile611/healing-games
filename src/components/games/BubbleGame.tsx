@@ -132,7 +132,7 @@ export default function BubbleGame() {
         style={{ height: "360px", background: "linear-gradient(180deg, #f0faf6 0%, #daf2ea 100%)" }}
       />
       <p className="text-center text-mint-600 font-bold">
-        戳破了 {popped} 个泡泡 🫧
+        {popped} {popped === 1 ? "bubble" : "bubbles"} popped 🫧
       </p>
     </div>
   );

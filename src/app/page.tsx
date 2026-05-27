@@ -1,4 +1,5 @@
 import GameGrid from "@/components/GameGrid";
+import { ICONS, ICON_LIST } from "@/lib/gameIcons";
 
 const HERO_BG = "https://pub-9231efe19a5243b79b24e44c1e722520.r2.dev/healing-hut/mid-jouney/Tinaking611_A_soft_anime_aesthetic_illustration_of_the_interi_de59075f-85ce-4fce-aca1-14488eeb72cd_3.png";
 
@@ -87,14 +88,14 @@ export default function Home() {
               Listen, breathe, pop, catch.<br />
               No pressure — just a moment to rest.
             </p>
-            <div className="flex justify-center gap-3 mt-8 text-3xl">
-              {["🎧","🌬️","🫧","🍃"].map((e, i) => (
+            <div className="flex justify-center gap-3 mt-8">
+              {ICON_LIST.map((id, i) => (
                 <span
-                  key={i}
-                  className="w-14 h-14 rounded-2xl bg-white/80 backdrop-blur-sm border border-border flex items-center justify-center shadow-sm"
+                  key={id}
+                  className="w-14 h-14 rounded-2xl bg-white/80 backdrop-blur-sm border border-border flex items-center justify-center shadow-sm text-mint-500 p-3"
                   style={{ animationDelay: `${i * 0.2}s` }}
                 >
-                  {e}
+                  {ICONS[id]}
                 </span>
               ))}
             </div>
