@@ -68,11 +68,11 @@ export default function Home() {
             <div>
               <h2 className="text-2xl font-bold text-charcoal mb-4">关于我们 🌸</h2>
               <p className="text-muted leading-relaxed mb-4">
-                我们住在塔斯马尼亚，岛的南边，离南极洲比离悉尼更近。
-                做这个小屋没有什么大道理，就是想有个地方可以什么都不想，玩一玩。
+                We live in Tasmania — the southern end of the island, closer to Antarctica than to Sydney.
+                There's no grand reason for this place. We just wanted somewhere to not think about anything for a bit.
               </p>
               <p className="text-muted leading-relaxed mb-6">
-                游戏会慢慢加的。不急。
+                More games will come. No rush.
               </p>
               <div className="flex flex-col gap-3 text-sm text-muted">
                 <span>🌿 树洞 · <a href="https://www.somewhere-quiet.com" target="_blank" rel="noopener noreferrer" className="text-mint-600 hover:underline">somewhere-quiet.com</a></span>
