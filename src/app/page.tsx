@@ -46,15 +46,17 @@ export default function Home() {
         <section className="relative text-center overflow-hidden rounded-3xl mb-12" style={{ minHeight: 520 }}>
 
           {/* background image */}
-          <div className="absolute inset-0 -z-10" style={{
+          <div className="absolute inset-0" style={{
             backgroundImage: `url(${HERO_BG})`,
             backgroundSize: "cover",
             backgroundPosition: "top center",
+            zIndex: 0,
           }} />
 
           {/* gradient fade to cream at bottom */}
-          <div className="absolute inset-0 -z-10" style={{
+          <div className="absolute inset-0" style={{
             background: "linear-gradient(to bottom, rgba(255,251,245,0.08) 0%, rgba(255,251,245,0.55) 55%, rgba(255,251,245,1) 88%)",
+            zIndex: 1,
           }} />
 
           {/* sparkles */}
@@ -68,11 +70,12 @@ export default function Home() {
               boxShadow: `0 0 ${s.size * 2}px ${s.size}px rgba(255,255,255,0.7), 0 0 3px 1px rgba(77,184,156,0.5)`,
               animation: `sparkle ${2.2 + i * 0.15}s ${s.delay} ease-in-out infinite`,
               pointerEvents: "none",
+              zIndex: 2,
             }} />
           ))}
 
           {/* content */}
-          <div className="relative flex flex-col items-center pt-16 pb-14 px-6">
+          <div className="relative flex flex-col items-center pt-16 pb-14 px-6" style={{ zIndex: 3 }}>
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/70 text-mint-700 text-sm font-semibold mb-6 border border-mint-200 backdrop-blur-sm">
               ✨ Slow down. Play a little.
             </div>
