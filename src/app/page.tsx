@@ -10,7 +10,7 @@ export default function Home() {
           <div className="flex items-center gap-6 text-sm font-semibold text-muted">
             <a href="#games" className="hover:text-mint-600 transition-colors">游戏</a>
             <a href="#about" className="hover:text-mint-600 transition-colors">关于</a>
-            <a href="https://www.somewhere-quiet.com" target="_blank" rel="noopener noreferrer" className="hover:text-mint-600 transition-colors">书动 ↗</a>
+            <a href="https://www.somewhere-quiet.com" target="_blank" rel="noopener noreferrer" className="hover:text-mint-600 transition-colors">树洞 ↗</a>
             <a
               href="https://www.etsy.com/au/shop/StudioSarahDigital"
               target="_blank"
@@ -75,7 +75,7 @@ export default function Home() {
                 游戏会慢慢增加。每一个都是精心做的小东西，希望能让你安静一会儿。
               </p>
               <div className="flex flex-col gap-3 text-sm text-muted">
-                <span>🌿 书动 · <a href="https://www.somewhere-quiet.com" target="_blank" rel="noopener noreferrer" className="text-mint-600 hover:underline">somewhere-quiet.com</a></span>
+                <span>🌿 树洞 · <a href="https://www.somewhere-quiet.com" target="_blank" rel="noopener noreferrer" className="text-mint-600 hover:underline">somewhere-quiet.com</a></span>
                 <span>🐦 YouTube · <a href="https://youtube.com/@SomeWhereQuiet611" target="_blank" rel="noopener noreferrer" className="text-mint-600 hover:underline">@SomeWhereQuiet611</a></span>
                 <span>✍️ 博客 · <a href="https://bloomlikecrocus.com" target="_blank" rel="noopener noreferrer" className="text-mint-600 hover:underline">bloomlikecrocus.com</a></span>
               </div>
