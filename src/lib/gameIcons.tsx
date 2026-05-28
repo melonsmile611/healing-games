@@ -15,13 +15,20 @@ export const ICONS: Record<GameId, React.ReactNode> = {
       <circle cx="22" cy="22" r="16" stroke="currentColor" strokeWidth="1.5" opacity="0.3"/>
     </svg>
   ),
-  bubbles: (
+  glyph: (
     <svg width="100%" height="100%" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <circle cx="16" cy="28" r="9"  stroke="currentColor" strokeWidth="2"/>
-      <circle cx="29" cy="24" r="6"  stroke="currentColor" strokeWidth="2"/>
-      <circle cx="22" cy="13" r="4"  stroke="currentColor" strokeWidth="2"/>
-      <circle cx="14" cy="24" r="1.5" fill="currentColor" opacity="0.45"/>
-      <circle cx="27" cy="20" r="1.2" fill="currentColor" opacity="0.45"/>
+      {/* dim unlit dots */}
+      <circle cx="10" cy="10" r="2.2" fill="currentColor" opacity="0.2"/>
+      <circle cx="22" cy="10" r="2.2" fill="currentColor" opacity="0.2"/>
+      <circle cx="34" cy="10" r="2.2" fill="currentColor" opacity="0.2"/>
+      <circle cx="10" cy="22" r="2.2" fill="currentColor" opacity="0.2"/>
+      <circle cx="34" cy="22" r="2.2" fill="currentColor" opacity="0.2"/>
+      <circle cx="10" cy="34" r="2.2" fill="currentColor" opacity="0.2"/>
+      <circle cx="22" cy="34" r="2.2" fill="currentColor" opacity="0.2"/>
+      <circle cx="34" cy="34" r="2.2" fill="currentColor" opacity="0.2"/>
+      {/* bright lit dots forming an L-shape */}
+      <circle cx="22" cy="22" r="3.5" fill="currentColor"/>
+      <circle cx="22" cy="22" r="6"   fill="currentColor" opacity="0.18"/>
     </svg>
   ),
   leaves: (
@@ -35,4 +42,4 @@ export const ICONS: Record<GameId, React.ReactNode> = {
   ),
 };
 
-export const ICON_LIST: GameId[] = ["sound", "breathing", "bubbles", "leaves"];
+export const ICON_LIST: GameId[] = ["sound", "breathing", "glyph", "leaves"];

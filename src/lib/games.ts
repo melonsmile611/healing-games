@@ -1,4 +1,4 @@
-export type GameId = "sound" | "breathing" | "bubbles" | "leaves";
+export type GameId = "sound" | "breathing" | "glyph" | "leaves";
 
 export interface GameMeta {
   id: GameId;
@@ -33,14 +33,14 @@ export const GAMES: GameMeta[] = [
     bgClass: "bg-lav-light",
   },
   {
-    id: "bubbles",
-    icon: "🫧",
-    title: "Bubble Popper",
-    titleZh: "点泡泡",
-    desc: "Floating glowing bubbles drift upward. Tap to pop — each one makes a tiny sound. No score, just peace.",
-    tag: "Tap & Release",
-    accentClass: "border-mint-300 text-mint-500",
-    bgClass: "bg-mint-50",
+    id: "glyph",
+    icon: "💡",
+    title: "Glyph Canvas",
+    titleZh: "光点画布",
+    desc: "Click or drag to light up glowing dots on a dark grid. Draw anything — a pattern, a face, a feeling.",
+    tag: "Draw · Glow",
+    accentClass: "border-violet-300 text-violet-500",
+    bgClass: "bg-gray-950",
   },
   {
     id: "leaves",

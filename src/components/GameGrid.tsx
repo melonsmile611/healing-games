@@ -8,7 +8,7 @@ import dynamic from "next/dynamic";
 const GameComponents: Record<GameId, React.ComponentType> = {
   sound:     dynamic(() => import("@/components/games/SoundBox"),     { ssr: false }),
   breathing: dynamic(() => import("@/components/games/BreathingGame"),{ ssr: false }),
-  bubbles:   dynamic(() => import("@/components/games/BubbleGame"),   { ssr: false }),
+  glyph:     dynamic(() => import("@/components/games/GlyphGame"),    { ssr: false }),
   leaves:    dynamic(() => import("@/components/games/LeafGame"),     { ssr: false }),
 };
 
