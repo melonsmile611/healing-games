@@ -176,7 +176,15 @@ export default function SoundBox() {
         })}
       </div>
 
-      {/* next button on wrong */}
+      {/* next / try again button */}
+      {answered && isCorrect && correctInLevel < level.toPass && (
+        <button
+          onClick={() => pickSound(levelIdx, usedInLevel)}
+          className="mt-1 px-6 py-2 rounded-full bg-mint-400 text-white font-bold text-sm hover:bg-mint-500 transition-colors shadow"
+        >
+          Next →
+        </button>
+      )}
       {answered && !isCorrect && (
         <button
           onClick={() => pickSound(levelIdx, usedInLevel)}
