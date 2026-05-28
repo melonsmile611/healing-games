@@ -27,7 +27,14 @@ export default function SoundBox() {
   const nodesRef = useRef<AudioNodes>([]);
 
   const stopSound = useCallback(() => {
-    stopAll(nodesRef.current); nodesRef.current = []; setIsPlaying(false);
+    stopAll(nodesRef.current);
+    nodesRef.current = [];
+    setIsPlaying(false);
+    // close the context so any stuck oscillators are truly silenced
+    if (ctxRef.current && ctxRef.current.state !== "closed") {
+      ctxRef.current.close();
+      ctxRef.current = null;
+    }
   }, []);
 
   const pickSound = useCallback((lIdx: number, alreadyUsed: number[]) => {
