@@ -126,13 +126,13 @@ export default function GlyphGame() {
 
     function onMouseDown(e: MouseEvent) {
       isDrawingRef.current = true;
-      const rect = canvas.getBoundingClientRect();
+      const rect = canvasRef.current!.getBoundingClientRect();
       const idx = cellAt(e.clientX - rect.left, e.clientY - rect.top);
       if (idx !== null) paint(idx);
     }
     function onMouseMove(e: MouseEvent) {
       if (!isDrawingRef.current) return;
-      const rect = canvas.getBoundingClientRect();
+      const rect = canvasRef.current!.getBoundingClientRect();
       const idx = cellAt(e.clientX - rect.left, e.clientY - rect.top);
       if (idx !== null) paint(idx);
     }
@@ -141,7 +141,7 @@ export default function GlyphGame() {
     function onTouchStart(e: TouchEvent) {
       e.preventDefault();
       isDrawingRef.current = true;
-      const rect = canvas.getBoundingClientRect();
+      const rect = canvasRef.current!.getBoundingClientRect();
       const t = e.touches[0];
       const idx = cellAt(t.clientX - rect.left, t.clientY - rect.top);
       if (idx !== null) paint(idx);
@@ -149,7 +149,7 @@ export default function GlyphGame() {
     function onTouchMove(e: TouchEvent) {
       e.preventDefault();
       if (!isDrawingRef.current) return;
-      const rect = canvas.getBoundingClientRect();
+      const rect = canvasRef.current!.getBoundingClientRect();
       const t = e.touches[0];
       const idx = cellAt(t.clientX - rect.left, t.clientY - rect.top);
       if (idx !== null) paint(idx);
