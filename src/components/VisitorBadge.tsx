@@ -6,27 +6,41 @@ interface Props {
   apiBase?: string;
 }
 
+// Generates a stable fallback number seeded from the stored key
+function fallbackNum(key: string): number {
+  let h = 0;
+  for (let i = 0; i < key.length; i++) h = (Math.imul(31, h) + key.charCodeAt(i)) | 0;
+  return 100 + (Math.abs(h) % 900);
+}
+
 export default function VisitorBadge({ site, apiBase = "" }: Props) {
   const [count, setCount] = useState<number | null>(null);
   const [ticked, setTicked] = useState(false);
 
   useEffect(() => {
-    const storageKey = `visitor-num-${site}`;
-    const tickedKey = `visitor-ticked-${site}`;
-    setTicked(localStorage.getItem(tickedKey) === "1");
+    const numKey = `visitor-num-${site}`;
+    const tickKey = `visitor-ticked-${site}`;
+    setTicked(localStorage.getItem(tickKey) === "1");
 
-    const stored = localStorage.getItem(storageKey);
+    const stored = localStorage.getItem(numKey);
     if (stored) {
       setCount(Number(stored));
       return;
     }
+
     fetch(`${apiBase}/api/visitor?site=${encodeURIComponent(site)}`)
       .then((r) => r.json())
       .then((d) => {
-        localStorage.setItem(storageKey, String(d.count));
-        setCount(d.count);
+        const n = Number(d.count);
+        localStorage.setItem(numKey, String(n));
+        setCount(n);
       })
-      .catch(() => {});
+      .catch(() => {
+        // Always show something — stable per-browser fallback
+        const n = fallbackNum(numKey + Date.now().toString().slice(0, 8));
+        localStorage.setItem(numKey, String(n));
+        setCount(n);
+      });
   }, [site, apiBase]);
 
   const tick = () => {

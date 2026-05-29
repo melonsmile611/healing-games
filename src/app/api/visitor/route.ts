@@ -1,22 +1,18 @@
 import { NextResponse } from "next/server";
 import { promises as fs } from "fs";
-import path from "path";
 
-const DATA_PATH = path.join(process.cwd(), "data", "visitors.json");
-
-async function readCounts(): Promise<Record<string, number>> {
-  try {
-    return JSON.parse(await fs.readFile(DATA_PATH, "utf-8"));
-  } catch {
-    return {};
-  }
-}
+// /tmp is writable on Vercel (per Lambda instance)
+const DATA_PATH = "/tmp/visitors.json";
 
 async function increment(site: string): Promise<number> {
-  const counts = await readCounts();
+  let counts: Record<string, number> = {};
+  try {
+    counts = JSON.parse(await fs.readFile(DATA_PATH, "utf-8"));
+  } catch {}
   counts[site] = (counts[site] || 0) + 1;
-  await fs.mkdir(path.dirname(DATA_PATH), { recursive: true });
-  await fs.writeFile(DATA_PATH, JSON.stringify(counts, null, 2));
+  try {
+    await fs.writeFile(DATA_PATH, JSON.stringify(counts));
+  } catch {}
   return counts[site];
 }
 
