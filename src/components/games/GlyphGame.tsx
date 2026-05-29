@@ -119,7 +119,8 @@ export default function GlyphGame() {
       if (color) {
         glowRef.current[idx] = performance.now();
         initAudio();
-        if (audioRef.current?.state === "running") playTick(audioRef.current);
+        const ac = audioRef.current;
+        if (ac && ac.state === "running") playTick(ac);
       }
     }
 
