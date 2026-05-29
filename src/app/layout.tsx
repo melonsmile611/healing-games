@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Nunito, DM_Serif_Display, Cormorant_Garamond } from "next/font/google";
 import "./globals.css";
+import VisitorBadge from "@/components/VisitorBadge";
 
 const nunito = Nunito({
   variable: "--font-nunito",
@@ -29,7 +30,10 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={`${nunito.variable} ${serif.variable} ${cormorant.variable}`}>
-      <body className="min-h-screen flex flex-col">{children}</body>
+      <body className="min-h-screen flex flex-col">
+        {children}
+        <VisitorBadge site="healing-corner" />
+      </body>
     </html>
   );
 }
