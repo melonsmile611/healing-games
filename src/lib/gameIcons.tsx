@@ -51,6 +51,18 @@ export const ICONS: Record<GameId, React.ReactNode> = {
       <circle cx="31" cy="19" r="3.2" fill="currentColor" fillOpacity="0.22" stroke="currentColor" strokeWidth="1.6"/>
     </svg>
   ),
+  giiker: (
+    <svg width="100%" height="100%" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+      {/* four colour pegs */}
+      <circle cx="11" cy="22" r="5" fill="currentColor" fillOpacity="0.85"/>
+      <circle cx="22" cy="22" r="5" fill="currentColor" fillOpacity="0.45"/>
+      <circle cx="33" cy="22" r="5" fill="currentColor" fillOpacity="0.85"/>
+      <circle cx="22" cy="11" r="5" fill="currentColor" fillOpacity="0.45"/>
+      {/* hint dot — correct position */}
+      <circle cx="22" cy="34" r="3" fill="currentColor"/>
+      <circle cx="31" cy="34" r="3" fill="currentColor" fillOpacity="0.35"/>
+    </svg>
+  ),
 };
 
-export const ICON_LIST: GameId[] = ["sound", "breathing", "glyph", "leaves", "zoo"];
+export const ICON_LIST: GameId[] = ["sound", "breathing", "glyph", "leaves", "zoo", "giiker"];

@@ -1,4 +1,4 @@
-export type GameId = "sound" | "breathing" | "glyph" | "leaves" | "zoo";
+export type GameId = "sound" | "breathing" | "glyph" | "leaves" | "zoo" | "giiker";
 
 export interface GameMeta {
   id: GameId;
@@ -63,5 +63,16 @@ export const GAMES: GameMeta[] = [
     accentClass: "border-purple-300 text-purple-500",
     bgClass: "bg-purple-50",
     href: "/voice_training_zoo-English.html",
+  },
+  {
+    id: "giiker",
+    icon: "🔐",
+    title: "GiiKER Code Breaker",
+    titleZh: "代码机",
+    desc: "Crack the secret colour code in as few guesses as you can. A digital take on the classic Mastermind puzzle.",
+    tag: "Logic · Puzzle",
+    accentClass: "border-rose-300 text-rose-500",
+    bgClass: "bg-rose-50",
+    href: "/giiker/index.html",
   },
 ];
