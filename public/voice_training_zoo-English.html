@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <title>🎪 Joyful Zoo - Voice Training Adventure</title>
+    <style>
+        * { 
+            margin: 0; padding: 0; box-sizing: border-box; 
+            -webkit-tap-highlight-color: transparent;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
+            touch-action: manipulation;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #2C3E50;
+            overflow-x: hidden;
+            -webkit-overflow-scrolling: touch;
+            padding-bottom: 40px;
+        }
+
+        .stars {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 0; overflow: hidden;
+        }
+        .star {
+            position: absolute; width: 2px; height: 2px;
+            background: rgba(255,255,255,0.8); border-radius: 50%;
+            animation: twinkle 3s ease-in-out infinite;
+        }
+        @keyframes twinkle { 0%, 100% { opacity: 0.2; } 50% { opacity: 1; } }
+
+        .container { max-width: 680px; margin: 0 auto; padding: 16px; position: relative; z-index: 1; }
+
+        header { text-align: center; padding: 24px 10px; color: white; }
+        header h1 { font-size: 1.8rem; font-weight: 800; margin-bottom: 6px; text-shadow: 0 2px 8px rgba(0,0,0,0.3); }
+        header p { font-size: 0.95rem; opacity: 0.9; }
+
+        .progress-bar {
+            background: rgba(255,255,255,0.25); border-radius: 12px; height: 10px;
+            margin: 12px auto; max-width: 320px; overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%; background: linear-gradient(90deg, #FFE66D, #4ECDC4);
+            border-radius: 12px; transition: width 0.5s ease; width: 0%;
+        }
+
+        .session-tabs {
+            display: flex; gap: 8px; margin-bottom: 16px;
+            background: rgba(255,255,255,0.15); padding: 6px;
+            border-radius: 14px;
+        }
+        .session-tab {
+            flex: 1; padding: 10px; border: none; border-radius: 10px;
+            background: transparent; color: white; font-size: 0.9rem;
+            font-weight: 700; cursor: pointer; -webkit-appearance: none;
+            transition: all 0.3s;
+        }
+        .session-tab.active {
+            background: rgba(255,255,255,0.9); color: #2C3E50;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .session-tab .time-label { font-size: 0.75rem; opacity: 0.8; font-weight: 400; }
+
+        .instructions {
+            background: rgba(255,255,255,0.95); border-radius: 16px;
+            padding: 18px; margin-bottom: 16px;
+        }
+        .instructions h3 { font-size: 1rem; margin-bottom: 10px; color: #2C3E50; }
+        .instructions ul { list-style: none; }
+        .instructions li { 
+            padding: 5px 0; padding-left: 22px; position: relative; 
+            color: #555; font-size: 0.85rem; line-height: 1.5;
+        }
+        .instructions li::before { content: "✨"; position: absolute; left: 0; }
+
+        .cards-grid { display: grid; gap: 14px; margin: 16px 0; }
+        @media (min-width: 768px) { .cards-grid { grid-template-columns: repeat(3, 1fr); } }
+
+        .mission-card {
+            background: white; border-radius: 18px; padding: 22px;
+            box-shadow: 0 6px 24px rgba(0,0,0,0.12);
+            position: relative; overflow: hidden;
+        }
+        .mission-card.lion { border-top: 4px solid #FF8C42; }
+        .mission-card.dolphin { border-top: 4px solid #45B7D1; }
+        .mission-card.whale { border-top: 4px solid #5B7CF9; }
+
+        .animal-emoji { 
+            font-size: 3rem; display: block; text-align: center; 
+            margin-bottom: 8px; animation: float 3s ease-in-out infinite;
+        }
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+
+        .mission-title { font-size: 1.2rem; font-weight: 800; text-align: center; margin-bottom: 6px; }
+        .mission-desc { text-align: center; color: #666; margin-bottom: 12px; font-size: 0.85rem; line-height: 1.5; }
+
+        .timer-display {
+            font-size: 1.6rem; font-weight: 800; text-align: center;
+            color: #FF6B6B; margin: 6px 0; font-variant-numeric: tabular-nums;
+        }
+
+        .visualizer-container {
+            height: 80px; background: #1a1a2e; border-radius: 12px;
+            margin: 10px 0; overflow: hidden; display: none;
+            border: 2px solid #e0e0e0;
+        }
+        .visualizer-container.active { display: block; }
+        canvas { width: 100%; height: 100%; display: block; }
+
+        .volume-bar {
+            height: 14px; background: #e9ecef; border-radius: 7px;
+            overflow: hidden; margin: 6px 0;
+        }
+        .volume-fill {
+            height: 100%; background: linear-gradient(90deg, #51cf66, #fcc419);
+            border-radius: 7px; transition: width 0.15s; width: 0%;
+        }
+        .volume-label { text-align: center; font-size: 0.75rem; color: #888; margin-top: 3px; }
+
+        .status-text { 
+            text-align: center; font-weight: 700; margin: 6px 0; 
+            min-height: 20px; font-size: 0.9rem;
+        }
+        .status-text.recording { color: #FF6B6B; }
+        .status-text.success { color: #96CEB4; }
+        .status-text.error { color: #e74c3c; }
+
+        .counter {
+            display: flex; justify-content: center; align-items: center;
+            gap: 10px; margin: 12px 0;
+        }
+        .count-display { 
+            font-size: 2rem; font-weight: 800; color: #2C3E50; 
+            min-width: 44px; text-align: center;
+        }
+        .btn {
+            border: none; border-radius: 50%; width: 40px; height: 40px;
+            font-size: 1.2rem; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            background: #f0f0f0; color: #666;
+        }
+        .btn-minus { background: #ffe5e5; color: #ff6b6b; }
+        .btn-plus { background: #e5f5e5; color: #51cf66; }
+        .btn:active { opacity: 0.7; transform: scale(0.95); }
+
+        .record-btn {
+            display: block; width: 100%; padding: 16px;
+            border: none; border-radius: 14px;
+            font-size: 1rem; font-weight: 700;
+            color: white; text-align: center;
+            margin-top: 12px; cursor: pointer;
+            -webkit-appearance: none; appearance: none;
+            transition: transform 0.1s, opacity 0.2s;
+        }
+        .record-btn:active { transform: scale(0.97); opacity: 0.9; }
+        .record-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .lion .record-btn { background: linear-gradient(135deg, #FF8C42, #ff6b6b); }
+        .dolphin .record-btn { background: linear-gradient(135deg, #45B7D1, #4ecdc4); }
+        .whale .record-btn { background: linear-gradient(135deg, #5B7CF9, #6c5ce7); }
+
+        .record-btn.recording {
+            background: #ff6b6b !important;
+            animation: pulse-rec 1s ease-in-out infinite;
+        }
+        @keyframes pulse-rec { 0%, 100% { opacity: 1; } 50% { opacity: 0.75; } }
+
+        .badge-container {
+            display: flex; justify-content: center; gap: 5px;
+            margin-top: 10px; flex-wrap: wrap;
+        }
+        .badge {
+            width: 26px; height: 26px; border-radius: 50%; 
+            background: #e9ecef; display: flex;
+            align-items: center; justify-content: center;
+            font-size: 0.75rem; transition: all 0.3s;
+        }
+        .badge.earned {
+            background: linear-gradient(135deg, #FFE66D, #ff9f43);
+            transform: scale(1.1); box-shadow: 0 2px 6px rgba(255, 230, 109, 0.4);
+        }
+
+        .daily-summary {
+            background: white; border-radius: 18px; padding: 20px;
+            margin-top: 20px; box-shadow: 0 6px 24px rgba(0,0,0,0.12);
+        }
+        .summary-title { font-size: 1.1rem; font-weight: 800; text-align: center; margin-bottom: 12px; }
+        .week-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; }
+        .day-cell {
+            aspect-ratio: 1; border-radius: 8px; display: flex;
+            align-items: center; justify-content: center; font-weight: 700;
+            font-size: 0.8rem; background: #f8f9fa; color: #adb5bd;
+            transition: all 0.3s; cursor: pointer;
+        }
+        .day-cell.active { 
+            background: linear-gradient(135deg, #4ECDC4, #667eea); 
+            color: white; transform: scale(1.05); 
+            box-shadow: 0 2px 8px rgba(78, 205, 196, 0.3);
+        }
+        .day-cell.completed { background: #96CEB4; color: white; }
+        .day-cell:hover { background: #e9ecef; }
+
+        .week-nav { display: flex; justify-content: center; gap: 6px; margin: 12px 0; flex-wrap: wrap; }
+        .week-btn {
+            background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4);
+            color: white; padding: 5px 12px; border-radius: 14px;
+            font-size: 0.8rem; font-weight: 700; cursor: pointer;
+            -webkit-appearance: none;
+        }
+        .week-btn.active { background: rgba(255,255,255,0.9); color: #2C3E50; }
+
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5); display: none;
+            align-items: center; justify-content: center; z-index: 2000;
+            padding: 20px;
+        }
+        .modal-overlay.active { display: flex; }
+        .modal {
+            background: white; border-radius: 18px; padding: 28px;
+            max-width: 320px; width: 100%; text-align: center;
+            animation: modal-pop 0.3s ease;
+        }
+        @keyframes modal-pop { 0% { transform: scale(0.85); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+        .modal h2 { font-size: 1.3rem; margin-bottom: 10px; }
+        .modal p { color: #666; margin-bottom: 18px; font-size: 0.9rem; }
+        .modal-btn {
+            background: linear-gradient(135deg, #4ECDC4, #FF6B6B);
+            color: white; border: none; padding: 10px 24px;
+            border-radius: 16px; font-size: 0.9rem; font-weight: 700;
+            cursor: pointer; -webkit-appearance: none;
+        }
+
+        .celebration {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 1000; display: none;
+        }
+        .celebration.active { display: block; }
+        .confetti {
+            position: absolute; width: 8px; height: 8px;
+            animation: confetti-fall 2.5s ease-out forwards;
+        }
+        @keyframes confetti-fall {
+            0% { transform: translateY(-30px) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+        }
+
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+    <div class="stars" id="stars"></div>
+    <div class="celebration" id="celebration"></div>
+
+    <div class="modal-overlay" id="modal">
+        <div class="modal">
+            <div id="modal-emoji" style="font-size: 3rem; margin-bottom: 6px;">🎉</div>
+            <h2 id="modal-title">Mission Complete!</h2>
+            <p id="modal-text">You earned today's badge!</p>
+            <button class="modal-btn" onclick="closeModal()">Awesome! 🌟</button>
+        </div>
+    </div>
+
+    <div class="container">
+        <header>
+            <h1>🎪 Joyful Zoo</h1>
+            <p>LSVT LOUD® Voice Training Adventure</p>
+            <div class="progress-bar">
+                <div class="progress-fill" id="totalProgress"></div>
+            </div>
+            <p style="font-size: 0.8rem; opacity: 0.8;">
+                <span id="sessionLabel">Morning</span> Progress: <span id="progressText">0/30</span>
+            </p>
+        </header>
+
+        <div class="session-tabs">
+            <button class="session-tab active" id="tab-am" onclick="switchSession('am')">
+                🌅 Morning Session<br><span class="time-label">1st Round</span>
+            </button>
+            <button class="session-tab" id="tab-pm" onclick="switchSession('pm')">
+                🌇 Afternoon Session<br><span class="time-label">2nd Round</span>
+            </button>
+        </div>
+
+        <div class="week-nav" id="weekNav"></div>
+
+        <div class="instructions">
+            <h3>🎯 Today's Mission (<span id="instSession">Morning</span>)</h3>
+            <ul>
+                <li><strong>LOUD:</strong> Speak with normal, strong volume</li>
+                <li><strong>INTENT:</strong> Consciously control your voice muscles</li>
+                <li><strong>REPEAT:</strong> Complete each exercise 10 times</li>
+                <li><strong>GOAL:</strong> 3 missions × 10 reps = 30 reps/<span id="instSession2">Morning</span></li>
+            </ul>
+        </div>
+
+        <div class="cards-grid">
+            <!-- Lion -->
+            <div class="mission-card lion">
+                <span class="animal-emoji">🦁</span>
+                <h3 class="mission-title">Lion King Roar</h3>
+                <p class="mission-desc">Sustain "Ah——" for 10-15 seconds<br>Build vocal power & breath control</p>
+
+                <div class="timer-display hidden" id="lion-timer">0.0s</div>
+
+                <div class="visualizer-container" id="lion-viz">
+                    <canvas id="lion-canvas"></canvas>
+                </div>
+
+                <div class="volume-bar"><div class="volume-fill" id="lion-volume"></div></div>
+                <p class="volume-label">Volume Intensity</p>
+
+                <p class="status-text" id="lion-status">Tap to start recording 🦁</p>
+
+                <div class="counter">
+                    <button class="btn btn-minus" onclick="event.stopPropagation();adjustCount('lion', -1)">−</button>
+                    <span class="count-display" id="lion-count">0</span>
+                    <span style="color:#adb5bd; font-size:1rem;">/10</span>
+                    <button class="btn btn-plus" onclick="event.stopPropagation();adjustCount('lion', 1)">+</button>
+                </div>
+
+                <button class="record-btn" id="lion-btn" type="button">🎤 Tap to Record</button>
+
+                <div class="badge-container" id="lion-badges"></div>
+            </div>
+
+            <!-- Dolphin -->
+            <div class="mission-card dolphin">
+                <span class="animal-emoji">🐬</span>
+                <h3 class="mission-title">Dolphin Leap</h3>
+                <p class="mission-desc">Glide from low to high "Ah⬆️"<br>Stretch your vocal range upward</p>
+
+                <div class="visualizer-container" id="dolphin-viz">
+                    <canvas id="dolphin-canvas"></canvas>
+                </div>
+
+                <div class="volume-bar"><div class="volume-fill" id="dolphin-volume"></div></div>
+                <p class="volume-label">Pitch Height</p>
+
+                <p class="status-text" id="dolphin-status">Tap to start recording 🐬</p>
+
+                <div class="counter">
+                    <button class="btn btn-minus" onclick="event.stopPropagation();adjustCount('dolphin', -1)">−</button>
+                    <span class="count-display" id="dolphin-count">0</span>
+                    <span style="color:#adb5bd; font-size:1rem;">/10</span>
+                    <button class="btn btn-plus" onclick="event.stopPropagation();adjustCount('dolphin', 1)">+</button>
+                </div>
+
+                <button class="record-btn" id="dolphin-btn" type="button">🎤 Tap to Record</button>
+
+                <div class="badge-container" id="dolphin-badges"></div>
+            </div>
+
+            <!-- Whale -->
+            <div class="mission-card whale">
+                <span class="animal-emoji">🐳</span>
+                <h3 class="mission-title">Blue Whale Dive</h3>
+                <p class="mission-desc">Glide from high to low "Ah⬇️"<br>Master deep, resonant tones</p>
+
+                <div class="visualizer-container" id="whale-viz">
+                    <canvas id="whale-canvas"></canvas>
+                </div>
+
+                <div class="volume-bar"><div class="volume-fill" id="whale-volume"></div></div>
+                <p class="volume-label">Depth Control</p>
+
+                <p class="status-text" id="whale-status">Tap to start recording 🐳</p>
+
+                <div class="counter">
+                    <button class="btn btn-minus" onclick="event.stopPropagation();adjustCount('whale', -1)">−</button>
+                    <span class="count-display" id="whale-count">0</span>
+                    <span style="color:#adb5bd; font-size:1rem;">/10</span>
+                    <button class="btn btn-plus" onclick="event.stopPropagation();adjustCount('whale', 1)">+</button>
+                </div>
+
+                <button class="record-btn" id="whale-btn" type="button">🎤 Tap to Record</button>
+
+                <div class="badge-container" id="whale-badges"></div>
+            </div>
+        </div>
+
+        <div class="daily-summary">
+            <h3 class="summary-title">📅 4-Week Adventure Map</h3>
+            <div class="week-nav" style="margin-bottom: 10px;">
+                <button class="week-btn" onclick="showWeek(1)">Week 1</button>
+                <button class="week-btn" onclick="showWeek(2)">Week 2</button>
+                <button class="week-btn" onclick="showWeek(3)">Week 3</button>
+                <button class="week-btn" onclick="showWeek(4)">Week 4</button>
+            </div>
+            <div class="week-grid" id="calendar"></div>
+            <p style="text-align: center; margin-top: 10px; color: #666; font-size: 0.8rem;">
+                <span style="display:inline-block;width:10px;height:10px;background:#96CEB4;border-radius:2px;margin-right:4px;vertical-align:middle;"></span>Completed
+                <span style="display:inline-block;width:10px;height:10px;background:linear-gradient(135deg,#4ECDC4,#667eea);border-radius:2px;margin-left:10px;margin-right:4px;vertical-align:middle;"></span>Today
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // ===== Global State =====
+        var audioCtx = null;
+        var analyserNode = null;
+        var micSource = null;
+        var animFrame = null;
+        var isRecording = false;
+        var activeType = null;
+        var startTime = 0;
+        var timerInt = null;
+        var autoStop = null;
+        var streamRef = null;
+        var currentWeek = 1;
+        var currentDay = 1;
+        var totalDays = 28;
+        var currentSession = 'am';
+
+        var missions = {
+            lion: { am: 0, pm: 0, target: 10, name: 'Lion King' },
+            dolphin: { am: 0, pm: 0, target: 10, name: 'Dolphin' },
+            whale: { am: 0, pm: 0, target: 10, name: 'Blue Whale' }
+        };
+
+        // ===== Switch Morning/Afternoon =====
+        function switchSession(session) {
+            currentSession = session;
+            document.getElementById('tab-am').classList.toggle('active', session === 'am');
+            document.getElementById('tab-pm').classList.toggle('active', session === 'pm');
+
+            var label = session === 'am' ? 'Morning' : 'Afternoon';
+            document.getElementById('sessionLabel').textContent = label;
+            document.getElementById('instSession').textContent = label;
+            document.getElementById('instSession2').textContent = label;
+
+            ['lion', 'dolphin', 'whale'].forEach(function(t) {
+                var saved = localStorage.getItem(t + '_day_' + currentDay + '_' + session);
+                missions[t][session] = saved ? parseInt(saved) : 0;
+                document.getElementById(t + '-count').textContent = missions[t][session];
+                updateBadges(t);
+            });
+
+            updateProgress();
+        }
+
+        // ===== Initialization =====
+        function init() {
+            createStars();
+            initWeekNav();
+            updateCalendar();
+            switchSession('am');
+            setupButtons();
+            setupModal();
+
+            setInterval(function() {
+                ['lion', 'dolphin', 'whale'].forEach(function(t) {
+                    localStorage.setItem(t + '_day_' + currentDay + '_' + currentSession, missions[t][currentSession]);
+                });
+            }, 3000);
+        }
+
+        function createStars() {
+            var c = document.getElementById('stars');
+            for (var i = 0; i < 35; i++) {
+                var s = document.createElement('div');
+                s.className = 'star';
+                s.style.left = Math.random() * 100 + '%';
+                s.style.top = Math.random() * 100 + '%';
+                s.style.animationDelay = Math.random() * 3 + 's';
+                c.appendChild(s);
+            }
+        }
+
+        function initWeekNav() {
+            var nav = document.getElementById('weekNav');
+            for (var i = 1; i <= 4; i++) {
+                var b = document.createElement('button');
+                b.className = 'week-btn' + (i === 1 ? ' active' : '');
+                b.textContent = 'Week ' + i;
+                b.onclick = (function(week) { return function() { setWeek(week); }; })(i);
+                nav.appendChild(b);
+            }
+        }
+
+        function setWeek(w) {
+            currentWeek = w;
+            var btns = document.querySelectorAll('#weekNav .week-btn');
+            for (var i = 0; i < btns.length; i++) {
+                btns[i].classList.toggle('active', i + 1 === w);
+            }
+            updateCalendar();
+        }
+
+        function showWeek(w) {
+            setWeek(w);
+            document.querySelector('.daily-summary').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function updateCalendar() {
+            var cal = document.getElementById('calendar');
+            cal.innerHTML = '';
+            var start = (currentWeek - 1) * 7 + 1;
+            var done = JSON.parse(localStorage.getItem('completedDays') || '[]');
+            for (var i = 0; i < 7; i++) {
+                var d = start + i;
+                if (d > totalDays) break;
+                var cell = document.createElement('div');
+                cell.className = 'day-cell';
+                if (d === currentDay) cell.classList.add('active');
+                if (done.indexOf(d) !== -1) cell.classList.add('completed');
+                cell.textContent = d;
+                cell.onclick = (function(day) { return function() { currentDay = day; updateCalendar(); switchSession('am'); }; })(d);
+                cal.appendChild(cell);
+            }
+        }
+
+        // ===== Counter =====
+        function adjustCount(type, delta) {
+            missions[type][currentSession] = Math.max(0, Math.min(missions[type].target, missions[type][currentSession] + delta));
+            document.getElementById(type + '-count').textContent = missions[type][currentSession];
+            updateBadges(type);
+            updateProgress();
+            checkCompletion(type);
+        }
+
+        function updateBadges(type) {
+            var c = document.getElementById(type + '-badges');
+            c.innerHTML = '';
+            var count = missions[type][currentSession];
+            for (var i = 1; i <= 10; i++) {
+                var b = document.createElement('div');
+                b.className = 'badge' + (i <= count ? ' earned' : '');
+                b.textContent = i === 10 ? '👑' : '⭐';
+                c.appendChild(b);
+            }
+        }
+
+        function updateProgress() {
+            var total = missions.lion[currentSession] + missions.dolphin[currentSession] + missions.whale[currentSession];
+            document.getElementById('totalProgress').style.width = (total / 30 * 100) + '%';
+            document.getElementById('progressText').textContent = total + '/30';
+        }
+
+        function checkCompletion(type) {
+            if (missions[type][currentSession] === 10) {
+                var msgs = {
+                    lion: { emoji: '🦁', title: 'ROAR! Lion King Conquered!', text: 'The boulder is shattered! You earned the Power Badge!' },
+                    dolphin: { emoji: '🐬', title: 'SPLASH! Dolphin Soared!', text: 'Perfect ring jump! You earned the Agility Badge!' },
+                    whale: { emoji: '🐳', title: 'DEEP DIVE! Treasure Found!', text: 'The ancient chest opens! You earned the Depth Badge!' }
+                };
+                var key = 'shown_' + type + '_' + currentDay + '_' + currentSession;
+                if (!localStorage.getItem(key)) {
+                    showModal(msgs[type]);
+                    localStorage.setItem(key, 'true');
+                    triggerConfetti();
+                }
+            }
+
+            var amTotal = missions.lion.am + missions.dolphin.am + missions.whale.am;
+            var pmTotal = missions.lion.pm + missions.dolphin.pm + missions.whale.pm;
+
+            if (amTotal === 30 && pmTotal === 30) {
+                var allKey = 'allShown_' + currentDay;
+                if (!localStorage.getItem(allKey)) {
+                    setTimeout(function() {
+                        showModal({ emoji: '🏆', title: 'Daily Champion!', text: 'Day ' + currentDay + ' morning + afternoon all complete! Amazing!' });
+                        triggerConfetti();
+                        var done = JSON.parse(localStorage.getItem('completedDays') || '[]');
+                        if (done.indexOf(currentDay) === -1) {
+                            done.push(currentDay);
+                            localStorage.setItem('completedDays', JSON.stringify(done));
+                        }
+                        updateCalendar();
+                    }, 1500);
+                    localStorage.setItem(allKey, 'true');
+                }
+            }
+        }
+
+        // ===== Recording Functions =====
+        function toggleRecord(type) {
+            if (isRecording) {
+                if (activeType === type) {
+                    stopRecording(type);
+                } else {
+                    stopRecording(activeType);
+                    setTimeout(function() { startRecording(type); }, 300);
+                }
+            } else {
+                startRecording(type);
+            }
+        }
+
+        function startRecording(type) {
+            var btn = document.getElementById(type + '-btn');
+            var status = document.getElementById(type + '-status');
+            var viz = document.getElementById(type + '-viz');
+
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                status.textContent = 'Browser does not support recording';
+                status.className = 'status-text error';
+                alert('Your browser does not support audio recording. Please use Safari or Chrome.');
+                return;
+            }
+
+            if (!audioCtx) {
+                var AudioContext = window.AudioContext || window.webkitAudioContext;
+                audioCtx = new AudioContext();
+            }
+
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume().then(function() {
+                    doStartRecording(type);
+                }).catch(function() {
+                    status.textContent = 'Audio startup failed';
+                    status.className = 'status-text error';
+                });
+            } else {
+                doStartRecording(type);
+            }
+        }
+
+        function doStartRecording(type) {
+            var btn = document.getElementById(type + '-btn');
+            var status = document.getElementById(type + '-status');
+            var viz = document.getElementById(type + '-viz');
+
+            navigator.mediaDevices.getUserMedia({
+                audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false }
+            }).then(function(stream) {
+                streamRef = stream;
+
+                micSource = audioCtx.createMediaStreamSource(stream);
+                analyserNode = audioCtx.createAnalyser();
+                analyserNode.fftSize = 256;
+                analyserNode.smoothingTimeConstant = 0.8;
+                micSource.connect(analyserNode);
+
+                isRecording = true;
+                activeType = type;
+                btn.textContent = '⏹ Tap to Stop';
+                btn.classList.add('recording');
+                status.textContent = 'Recording... Speak "Ah" loudly! 📢';
+                status.className = 'status-text recording';
+                viz.classList.add('active');
+
+                if (type === 'lion') {
+                    document.getElementById('lion-timer').classList.remove('hidden');
+                    startTime = Date.now();
+                    timerInt = setInterval(function() {
+                        var elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+                        document.getElementById('lion-timer').textContent = elapsed + 's';
+                    }, 100);
+                }
+
+                drawVisualizer(type);
+
+                var duration = type === 'lion' ? 15000 : 5000;
+                autoStop = setTimeout(function() {
+                    if (isRecording && activeType === type) {
+                        stopRecording(type);
+                    }
+                }, duration);
+
+            }).catch(function(err) {
+                var msg = 'Unable to start recording';
+                if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+                    msg = 'Microphone permission denied. Please allow microphone access in Safari settings.';
+                } else if (err.name === 'NotFoundError') {
+                    msg = 'No microphone found.';
+                }
+                status.textContent = 'Recording failed';
+                status.className = 'status-text error';
+                alert(msg);
+            });
+        }
+
+        function stopRecording(type) {
+            isRecording = false;
+            activeType = null;
+
+            if (animFrame) { cancelAnimationFrame(animFrame); animFrame = null; }
+            if (micSource) { micSource.disconnect(); micSource = null; }
+            if (analyserNode) { analyserNode.disconnect(); analyserNode = null; }
+            if (streamRef) { streamRef.getTracks().forEach(function(t) { t.stop(); }); streamRef = null; }
+            if (timerInt) { clearInterval(timerInt); timerInt = null; }
+            if (autoStop) { clearTimeout(autoStop); autoStop = null; }
+
+            var btn = document.getElementById(type + '-btn');
+            var status = document.getElementById(type + '-status');
+            var viz = document.getElementById(type + '-viz');
+            var volume = document.getElementById(type + '-volume');
+
+            btn.textContent = '🎤 Tap to Record';
+            btn.classList.remove('recording');
+            status.textContent = 'Done! +1 rep 🌟';
+            status.className = 'status-text success';
+            viz.classList.remove('active');
+            volume.style.width = '0%';
+
+            if (type === 'lion') {
+                document.getElementById('lion-timer').classList.add('hidden');
+            }
+
+            setTimeout(function() { adjustCount(type, 1); }, 400);
+        }
+
+        // ===== Unified Visualizer =====
+        function drawVisualizer(type) {
+            var canvas = document.getElementById(type + '-canvas');
+            var ctx = canvas.getContext('2d');
+            var volumeBar = document.getElementById(type + '-volume');
+
+            var rect = canvas.parentElement.getBoundingClientRect();
+            canvas.width = rect.width || 300;
+            canvas.height = rect.height || 80;
+
+            var bufferLength = analyserNode.frequencyBinCount;
+            var dataArray = new Uint8Array(bufferLength);
+
+            var colorScheme;
+            if (type === 'lion') {
+                colorScheme = { hueStart: 30, hueEnd: 0, sat: 85 };
+            } else if (type === 'dolphin') {
+                colorScheme = { hueStart: 200, hueEnd: 120, sat: 80 };
+            } else {
+                colorScheme = { hueStart: 280, hueEnd: 180, sat: 75 };
+            }
+
+            function draw() {
+                if (!isRecording || activeType !== type) return;
+                animFrame = requestAnimationFrame(draw);
+
+                analyserNode.getByteFrequencyData(dataArray);
+
+                ctx.fillStyle = '#1a1a2e';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                var sum = 0;
+                for (var i = 0; i < bufferLength; i++) sum += dataArray[i];
+                var avg = sum / bufferLength;
+                var volumePercent = Math.min((avg / 128) * 100, 100);
+                volumeBar.style.width = volumePercent + '%';
+
+                var barWidth = (canvas.width / bufferLength) * 2.5;
+                var x = 0;
+
+                for (var i = 0; i < bufferLength; i++) {
+                    var barHeight = (dataArray[i] / 255) * canvas.height * 0.9;
+                    var freqRatio = i / bufferLength;
+
+                    var hue = colorScheme.hueStart + (colorScheme.hueEnd - colorScheme.hueStart) * freqRatio;
+                    var intensity = dataArray[i] / 255;
+                    var sat = colorScheme.sat + intensity * 15;
+                    var light = 45 + intensity * 30;
+
+                    ctx.fillStyle = 'hsl(' + hue + ', ' + sat + '%, ' + light + '%)';
+
+                    if (dataArray[i] > 150) {
+                        ctx.shadowColor = 'hsl(' + hue + ', ' + sat + '%, 70%)';
+                        ctx.shadowBlur = 8;
+                    } else {
+                        ctx.shadowBlur = 0;
+                    }
+
+                    ctx.fillRect(x, canvas.height - barHeight, Math.max(barWidth, 2), barHeight);
+                    x += barWidth + 1;
+                }
+
+                ctx.shadowBlur = 0;
+            }
+
+            draw();
+        }
+
+        // ===== Button Events =====
+        function setupButtons() {
+            var types = ['lion', 'dolphin', 'whale'];
+            for (var i = 0; i < types.length; i++) {
+                (function(type) {
+                    var btn = document.getElementById(type + '-btn');
+                    btn.addEventListener('touchend', function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        toggleRecord(type);
+                        return false;
+                    }, false);
+                    btn.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        toggleRecord(type);
+                        return false;
+                    }, false);
+                })(types[i]);
+            }
+        }
+
+        // ===== Modal =====
+        function showModal(content) {
+            document.getElementById('modal-emoji').textContent = content.emoji;
+            document.getElementById('modal-title').textContent = content.title;
+            document.getElementById('modal-text').textContent = content.text;
+            document.getElementById('modal').classList.add('active');
+        }
+        function closeModal() {
+            document.getElementById('modal').classList.remove('active');
+        }
+        function setupModal() {
+            document.getElementById('modal').addEventListener('click', function(e) {
+                if (e.target === this) closeModal();
+            });
+        }
+
+        // ===== Confetti =====
+        function triggerConfetti() {
+            var c = document.getElementById('celebration');
+            c.innerHTML = ''; c.classList.add('active');
+            var colors = ['#FF6B6B', '#4ECDC4', '#FFE66D', '#FF8C42', '#45B7D1', '#5B7CF9', '#96CEB4'];
+            for (var i = 0; i < 40; i++) {
+                var conf = document.createElement('div');
+                conf.className = 'confetti';
+                conf.style.left = Math.random() * 100 + '%';
+                conf.style.background = colors[Math.floor(Math.random() * colors.length)];
+                conf.style.animationDelay = Math.random() * 2 + 's';
+                conf.style.borderRadius = Math.random() > 0.5 ? '50%' : '0';
+                c.appendChild(conf);
+            }
+            setTimeout(function() { c.classList.remove('active'); }, 3000);
+        }
+
+        // ===== Start =====
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', init);
+        } else {
+            init();
+        }
+    </script>
+</body>
+</html>
