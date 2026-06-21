@@ -5,7 +5,7 @@ import { GAMES, type GameId } from "@/lib/games";
 import { ICONS } from "@/lib/gameIcons";
 import dynamic from "next/dynamic";
 
-const GameComponents: Record<GameId, React.ComponentType> = {
+const GameComponents: Partial<Record<GameId, React.ComponentType>> = {
   sound:     dynamic(() => import("@/components/games/SoundBox"),     { ssr: false }),
   breathing: dynamic(() => import("@/components/games/BreathingGame"),{ ssr: false }),
   glyph:     dynamic(() => import("@/components/games/GlyphGame"),    { ssr: false }),
@@ -15,7 +15,14 @@ const GameComponents: Record<GameId, React.ComponentType> = {
 export default function GameGrid() {
   const [active, setActive] = useState<GameId | null>(null);
 
-  const open = (id: GameId) => setActive(id);
+  const open = (id: GameId) => {
+    const game = GAMES.find(g => g.id === id);
+    if (game?.href) {
+      window.open(game.href, "_blank", "noopener,noreferrer");
+      return;
+    }
+    setActive(id);
+  };
   const close = () => setActive(null);
 
   const activeGame = active ? GAMES.find(g => g.id === active) : null;
