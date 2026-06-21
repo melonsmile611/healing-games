@@ -40,6 +40,17 @@ export const ICONS: Record<GameId, React.ReactNode> = {
       <line x1="22" y1="28" x2="29" y2="23" stroke="currentColor" strokeWidth="1.5"/>
     </svg>
   ),
+  zoo: (
+    <svg width="100%" height="100%" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+      {/* paw pad */}
+      <ellipse cx="22" cy="28" rx="9" ry="7" fill="currentColor" fillOpacity="0.18" stroke="currentColor" strokeWidth="2"/>
+      {/* toes */}
+      <circle cx="13" cy="19" r="3.2" fill="currentColor" fillOpacity="0.22" stroke="currentColor" strokeWidth="1.6"/>
+      <circle cx="19" cy="15" r="3.2" fill="currentColor" fillOpacity="0.22" stroke="currentColor" strokeWidth="1.6"/>
+      <circle cx="25" cy="15" r="3.2" fill="currentColor" fillOpacity="0.22" stroke="currentColor" strokeWidth="1.6"/>
+      <circle cx="31" cy="19" r="3.2" fill="currentColor" fillOpacity="0.22" stroke="currentColor" strokeWidth="1.6"/>
+    </svg>
+  ),
 };
 
-export const ICON_LIST: GameId[] = ["sound", "breathing", "glyph", "leaves"];
+export const ICON_LIST: GameId[] = ["sound", "breathing", "glyph", "leaves", "zoo"];
