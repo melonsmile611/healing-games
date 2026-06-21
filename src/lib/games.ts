@@ -1,4 +1,4 @@
-export type GameId = "sound" | "breathing" | "glyph" | "leaves";
+export type GameId = "sound" | "breathing" | "glyph" | "leaves" | "zoo";
 
 export interface GameMeta {
   id: GameId;
@@ -9,6 +9,7 @@ export interface GameMeta {
   tag: string;
   accentClass: string;    // tailwind border/text accent
   bgClass: string;        // tailwind card bg tint
+  href?: string;
 }
 
 export const GAMES: GameMeta[] = [
@@ -51,5 +52,16 @@ export const GAMES: GameMeta[] = [
     tag: "Mouse · Calm",
     accentClass: "border-amber text-amber",
     bgClass: "bg-warm",
+  },
+  {
+    id: "zoo",
+    icon: "🎪",
+    title: "Joyful Zoo",
+    titleZh: "欢乐动物园",
+    desc: "Practice vowel sounds with zoo animals. Tap each animal and follow along — gentle voice warm-ups, one creature at a time.",
+    tag: "Voice · Warm-up",
+    accentClass: "border-purple-300 text-purple-500",
+    bgClass: "bg-purple-50",
+    href: "/voice_training_zoo-English.html",
   },
 ];
