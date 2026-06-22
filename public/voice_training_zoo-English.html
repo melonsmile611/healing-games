@@ -107,7 +107,7 @@
         }
 
         .visualizer-container {
-            height: 120px; background: #1a1a2e; border-radius: 12px;
+            height: 130px; background: #1a1a2e; border-radius: 12px;
             margin: 10px 0; overflow: hidden; display: none;
             border: 2px solid #e0e0e0;
         }
@@ -726,7 +726,7 @@
 
             var rect = canvas.parentElement.getBoundingClientRect();
             canvas.width = rect.width || 300;
-            canvas.height = rect.height || 120;
+            canvas.height = rect.height || 130;
 
             // fftSize 2048 → binSize ≈ 21.5 Hz → can resolve voice fundamental 80–500 Hz
             analyserNode.fftSize = 2048;
@@ -753,18 +753,18 @@
             var binsPerBar = Math.max(1, Math.floor(maxBarBin / BARS));
             var barW = Math.floor((canvas.width - BARS) / BARS);
 
-            // Fundamental search range: 80–500 Hz
+            // Fundamental: 80–350 Hz only (avoids 2nd harmonics of 200+ Hz voices)
             var fundMinBin = Math.max(1, Math.round(80  / binSize));
-            var fundMaxBin = Math.round(500 / binSize);
+            var fundMaxBin = Math.round(350 / binSize);
 
-            // Pitch smoothing & trail
+            // Pitch smoothing
             var smoothHz = 0;
-            var pitchTrail = []; // stores {pos, age} — pos 0–1 on gauge
             var trailFrame = 0;
-            var LOG_LO = Math.log(80), LOG_HI = Math.log(500);
 
+            // Linear scale: 80–400 Hz → 0–1
+            var PITCH_LO = 80, PITCH_HI = 400;
             function hzToPos(h) {
-                return Math.max(0, Math.min(1, (Math.log(h) - LOG_LO) / (LOG_HI - LOG_LO)));
+                return Math.max(0, Math.min(1, (h - PITCH_LO) / (PITCH_HI - PITCH_LO)));
             }
 
             function draw() {
@@ -789,7 +789,7 @@
                     for (var j = 0; j < binsPerBar; j++) {
                         if (freqData[startBin + j] > maxVal) maxVal = freqData[startBin + j];
                     }
-                    var barH = Math.floor((maxVal / 255) * (canvas.height - 60) * 0.95);
+                    var barH = Math.floor((maxVal / 255) * (canvas.height - 70) * 0.95);
                     var x = i * (barW + 1);
                     var y = canvas.height - barH;
                     var grad = ctx.createLinearGradient(0, y, 0, canvas.height);
@@ -808,113 +808,126 @@
                 var rms = Math.sqrt(rmsSum / timeData.length);
                 var db = rms > 0.001 ? Math.round(20 * Math.log10(rms)) : -60;
 
-                // ── Fundamental frequency (80–500 Hz) ──
+                // ── Fundamental frequency (80–350 Hz) ──
                 var peakBin = fundMinBin; var peakVal = 0;
                 for (var i = fundMinBin; i <= fundMaxBin; i++) {
                     if (freqData[i] > peakVal) { peakVal = freqData[i]; peakBin = i; }
                 }
-                var rawHz = peakVal > 30 ? Math.round(peakBin * binSize) : 0;
+                var rawHz = peakVal > 40 ? peakBin * binSize : 0;
 
-                // Exponential moving average — smooths jitter, keeps responsiveness
+                // EMA: slower response to reduce overshoot
                 if (rawHz > 0) {
-                    smoothHz = smoothHz > 0 ? smoothHz * 0.55 + rawHz * 0.45 : rawHz;
+                    smoothHz = smoothHz > 0 ? smoothHz * 0.72 + rawHz * 0.28 : rawHz;
                 } else {
-                    smoothHz = smoothHz * 0.85; // decay gently when silent
+                    smoothHz = smoothHz * 0.88;
                     if (smoothHz < 85) smoothHz = 0;
                 }
                 var hz = smoothHz > 0 ? Math.round(smoothHz) : 0;
 
-                // ── Pitch trail: push a new point every 3 frames ──
+                // ── Direction trend ──
                 trailFrame++;
-                if (trailFrame >= 3) {
-                    trailFrame = 0;
-                    if (hz > 0) {
-                        pitchTrail.push(hzToPos(hz));
-                        if (pitchTrail.length > 30) pitchTrail.shift();
-                    }
-                }
-
-                // Direction trend: compare last vs 8 steps ago
                 var trend = '';
-                if (pitchTrail.length >= 8) {
-                    var diff = pitchTrail[pitchTrail.length - 1] - pitchTrail[pitchTrail.length - 8];
-                    if      (diff >  0.04) trend = ' ↑';
-                    else if (diff < -0.04) trend = ' ↓';
-                    else                   trend = ' →';
+                if (trailFrame % 3 === 0 && hz > 0) {
+                    if (typeof draw._prevHz === 'undefined') draw._prevHz = hz;
+                    var diff = hz - draw._prevHz;
+                    if      (diff >  8) trend = ' ↑';
+                    else if (diff < -8) trend = ' ↓';
+                    else                trend = ' →';
+                    draw._prevHz = hz * 0.5 + draw._prevHz * 0.5;
+                } else {
+                    trend = draw._trend || '';
                 }
+                draw._trend = trend;
 
-                // ── Stats panel ──
-                ctx.fillStyle = 'rgba(0,0,0,0.55)';
-                ctx.fillRect(0, 0, canvas.width, 56);
+                // ── Stats panel (top 26px: dB + Hz) ──
+                ctx.fillStyle = 'rgba(0,0,0,0.6)';
+                ctx.fillRect(0, 0, canvas.width, 26);
 
-                ctx.font = 'bold 13px "SF Mono", "Courier New", monospace';
+                ctx.font = 'bold 12px "SF Mono", "Courier New", monospace';
                 ctx.textBaseline = 'middle';
 
                 var dbNorm = Math.max(0, Math.min(1, (db + 60) / 55));
                 var r = Math.round(dbNorm * 255);
                 var g = Math.round((1 - dbNorm * 0.6) * 200);
                 ctx.fillStyle = 'rgb(' + r + ',' + g + ',80)';
-                ctx.fillText('🔊 ' + db + ' dB', 8, 11);
+                ctx.fillText('🔊 ' + db + ' dB', 8, 13);
 
                 ctx.fillStyle = peakColor;
-                ctx.fillText('🎵 ' + (hz > 0 ? hz + ' Hz' + trend : '-- Hz'), 8, 27);
+                ctx.fillText('🎵 ' + (hz > 0 ? hz + ' Hz' + trend : '-- Hz'), canvas.width / 2, 13);
 
-                // ── Pitch gauge bar ──
-                var pitchPos = hz > 0 ? hzToPos(hz) : -1;
-                var gx = 8, gy = 43, gw = canvas.width - 16, gh = 8;
+                // ── Wiper gauge (26–68px) ──
+                var wx = 0, wy = 26, ww = canvas.width, wh = 42;
 
-                // Track background
-                ctx.fillStyle = 'rgba(255,255,255,0.12)';
+                // Gradient background: blue(低) → teal → red(高)
+                var bgGrad = ctx.createLinearGradient(wx, 0, wx + ww, 0);
+                bgGrad.addColorStop(0,    'rgba(60,80,200,0.45)');
+                bgGrad.addColorStop(0.5,  'rgba(40,180,160,0.35)');
+                bgGrad.addColorStop(1,    'rgba(220,60,60,0.45)');
+                ctx.fillStyle = bgGrad;
+                ctx.fillRect(wx, wy, ww, wh);
+
+                // Center tick mark
+                ctx.strokeStyle = 'rgba(255,255,255,0.15)';
+                ctx.lineWidth = 1;
                 ctx.beginPath();
-                ctx.roundRect ? ctx.roundRect(gx, gy, gw, gh, 4) : ctx.rect(gx, gy, gw, gh);
-                ctx.fill();
-
-                // Colored fill
-                if (pitchPos >= 0) {
-                    var trackGrad = ctx.createLinearGradient(gx, 0, gx + gw, 0);
-                    trackGrad.addColorStop(0,   '#5B7CF9');
-                    trackGrad.addColorStop(0.4, '#4ECDC4');
-                    trackGrad.addColorStop(1,   '#FF6B6B');
-                    ctx.fillStyle = trackGrad;
-                    ctx.beginPath();
-                    ctx.roundRect ? ctx.roundRect(gx, gy, gw * pitchPos, gh, 4) : ctx.rect(gx, gy, gw * pitchPos, gh);
-                    ctx.fill();
-
-                    // Trail ghost dots (fade out older ones)
-                    for (var i = 0; i < pitchTrail.length - 1; i++) {
-                        var alpha = (i / pitchTrail.length) * 0.5;
-                        var tdx = gx + gw * pitchTrail[i];
-                        ctx.beginPath();
-                        ctx.arc(tdx, gy + gh / 2, 3, 0, Math.PI * 2);
-                        ctx.fillStyle = 'rgba(255,255,255,' + alpha + ')';
-                        ctx.fill();
-                    }
-
-                    // Current dot
-                    var dotX = gx + gw * pitchPos;
-                    ctx.beginPath();
-                    ctx.arc(dotX, gy + gh / 2, 6, 0, Math.PI * 2);
-                    ctx.fillStyle = 'white';
-                    ctx.fill();
-                    ctx.strokeStyle = peakColor;
-                    ctx.lineWidth = 2;
-                    ctx.stroke();
-                }
+                ctx.moveTo(wx + ww / 2, wy + 4);
+                ctx.lineTo(wx + ww / 2, wy + wh - 4);
+                ctx.stroke();
 
                 // Labels
-                ctx.font = '10px sans-serif';
-                ctx.textBaseline = 'top';
-                ctx.fillStyle = 'rgba(255,255,255,0.5)';
-                ctx.fillText('低', gx, gy + gh + 2);
+                ctx.font = 'bold 11px sans-serif';
+                ctx.textBaseline = 'middle';
+                ctx.fillStyle = 'rgba(255,255,255,0.55)';
+                ctx.fillText('低', wx + 6, wy + wh / 2);
                 ctx.textAlign = 'right';
-                ctx.fillText('高', gx + gw, gy + gh + 2);
+                ctx.fillText('高', wx + ww - 6, wy + wh / 2);
                 ctx.textAlign = 'left';
 
-                // Separator line
+                // Needle (wiper)
+                if (hz > 0) {
+                    var needleX = wx + ww * hzToPos(hz);
+
+                    // Outer glow
+                    ctx.save();
+                    ctx.shadowColor = peakColor;
+                    ctx.shadowBlur = 18;
+                    ctx.strokeStyle = peakColor;
+                    ctx.lineWidth = 4;
+                    ctx.beginPath();
+                    ctx.moveTo(needleX, wy + 3);
+                    ctx.lineTo(needleX, wy + wh - 3);
+                    ctx.stroke();
+                    ctx.restore();
+
+                    // Sharp white line
+                    ctx.strokeStyle = 'white';
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.moveTo(needleX, wy + 3);
+                    ctx.lineTo(needleX, wy + wh - 3);
+                    ctx.stroke();
+
+                    // Top & bottom arrowhead triangles
+                    ctx.fillStyle = 'white';
+                    ctx.beginPath();
+                    ctx.moveTo(needleX, wy + 1);
+                    ctx.lineTo(needleX - 5, wy + 9);
+                    ctx.lineTo(needleX + 5, wy + 9);
+                    ctx.closePath();
+                    ctx.fill();
+                    ctx.beginPath();
+                    ctx.moveTo(needleX, wy + wh - 1);
+                    ctx.lineTo(needleX - 5, wy + wh - 9);
+                    ctx.lineTo(needleX + 5, wy + wh - 9);
+                    ctx.closePath();
+                    ctx.fill();
+                }
+
+                // Separator
                 ctx.strokeStyle = 'rgba(255,255,255,0.08)';
                 ctx.lineWidth = 1;
                 ctx.beginPath();
-                ctx.moveTo(0, 56); ctx.lineTo(canvas.width, 56);
+                ctx.moveTo(0, 68); ctx.lineTo(canvas.width, 68);
                 ctx.stroke();
             }
 
