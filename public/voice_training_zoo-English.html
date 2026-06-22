@@ -755,7 +755,7 @@
                 // ── Frequency bars ──
                 for (var i = 0; i < BARS; i++) {
                     var val = freqData[i];
-                    var barH = Math.floor((val / 255) * (canvas.height - 42) * 0.95);
+                    var barH = Math.floor((val / 255) * (canvas.height - 60) * 0.95);
                     var x = i * (barW + 1);
                     var y = canvas.height - barH;
                     var grad = ctx.createLinearGradient(0, y, 0, canvas.height);
@@ -783,29 +783,77 @@
                     ? Math.round(peakBin * SR / analyserNode.fftSize)
                     : 0;
 
-                // ── Stats panel (top of canvas) ──
+                // ── Stats panel (top of canvas, 56px tall) ──
                 ctx.fillStyle = 'rgba(0,0,0,0.55)';
-                ctx.fillRect(0, 0, canvas.width, 38);
+                ctx.fillRect(0, 0, canvas.width, 56);
 
                 ctx.font = 'bold 13px "SF Mono", "Courier New", monospace';
                 ctx.textBaseline = 'middle';
 
-                // dB value — color-coded: green quiet → yellow → red loud
+                // dB — color: green→yellow→red
                 var dbNorm = Math.max(0, Math.min(1, (db + 60) / 55));
                 var r = Math.round(dbNorm * 255);
                 var g = Math.round((1 - dbNorm * 0.6) * 200);
                 ctx.fillStyle = 'rgb(' + r + ',' + g + ',80)';
-                ctx.fillText('🔊 ' + db + ' dB', 8, 13);
+                ctx.fillText('🔊 ' + db + ' dB', 8, 11);
 
-                // Hz value
+                // Hz
                 ctx.fillStyle = peakColor;
-                ctx.fillText('🎵 ' + (hz > 0 ? hz + ' Hz' : '-- Hz'), 8, 29);
+                ctx.fillText('🎵 ' + (hz > 0 ? hz + ' Hz' : '-- Hz'), 8, 27);
+
+                // ── Pitch gauge (低 ←————→ 高) ──
+                // Map Hz logarithmically: 80Hz=0, 1200Hz=1
+                var LOG_LO = Math.log(80), LOG_HI = Math.log(1200);
+                var pitchPos = hz > 0
+                    ? Math.max(0, Math.min(1, (Math.log(hz) - LOG_LO) / (LOG_HI - LOG_LO)))
+                    : -1;
+
+                var gx = 8, gy = 43, gw = canvas.width - 16, gh = 8;
+
+                // Track background
+                ctx.fillStyle = 'rgba(255,255,255,0.12)';
+                ctx.beginPath();
+                ctx.roundRect ? ctx.roundRect(gx, gy, gw, gh, 4)
+                              : ctx.rect(gx, gy, gw, gh);
+                ctx.fill();
+
+                // Colored fill up to current pitch
+                if (pitchPos >= 0) {
+                    var trackGrad = ctx.createLinearGradient(gx, 0, gx + gw, 0);
+                    trackGrad.addColorStop(0,   '#5B7CF9'); // low — blue
+                    trackGrad.addColorStop(0.4, '#4ECDC4'); // mid — teal
+                    trackGrad.addColorStop(1,   '#FF6B6B'); // high — red
+                    ctx.fillStyle = trackGrad;
+                    ctx.beginPath();
+                    ctx.roundRect ? ctx.roundRect(gx, gy, gw * pitchPos, gh, 4)
+                                  : ctx.rect(gx, gy, gw * pitchPos, gh);
+                    ctx.fill();
+
+                    // Dot at current position
+                    var dotX = gx + gw * pitchPos;
+                    ctx.beginPath();
+                    ctx.arc(dotX, gy + gh / 2, 6, 0, Math.PI * 2);
+                    ctx.fillStyle = 'white';
+                    ctx.fill();
+                    ctx.strokeStyle = peakColor;
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                }
+
+                // Labels
+                ctx.font = '10px sans-serif';
+                ctx.textBaseline = 'top';
+                ctx.fillStyle = 'rgba(255,255,255,0.5)';
+                ctx.fillText('低', gx, gy + gh + 2);
+                ctx.textAlign = 'right';
+                ctx.fillText('高', gx + gw, gy + gh + 2);
+                ctx.textAlign = 'left';
 
                 // Separator line
                 ctx.strokeStyle = 'rgba(255,255,255,0.08)';
                 ctx.lineWidth = 1;
                 ctx.beginPath();
-                ctx.moveTo(0, 38); ctx.lineTo(canvas.width, 38);
+                ctx.moveTo(0, 56); ctx.lineTo(canvas.width, 56);
                 ctx.stroke();
             }
 
