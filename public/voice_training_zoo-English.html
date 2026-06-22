@@ -306,7 +306,7 @@
             <ul>
                 <li><strong>🔊 Volume (dB):</strong> How loud you are. –60 dB = silence · –20 dB = normal speech · –5 dB = very loud. Aim to keep it above –20 dB.</li>
                 <li><strong>🎵 Frequency (Hz):</strong> The fundamental pitch of your voice (80–500 Hz range). Watch this number rise as you pitch up and fall as you pitch down.</li>
-                <li><strong>Pitch gauge 低———高:</strong> The white dot slides left for low pitch and right for high pitch — tracking only the voice fundamental, not harmonics. Use it during Dolphin (pitch up ↑) and Blue Whale (pitch down ↓) exercises to track your range.</li>
+                <li><strong>Pitch gauge Low ←——→ High:</strong> The needle sweeps left for low pitch and right for high pitch — tracks your voice fundamental (80–400 Hz). Use it during Dolphin (pitch up ↑) and Blue Whale (pitch down ↓) exercises.</li>
                 <li><strong>Frequency bars:</strong> Each bar is a frequency band — taller bars mean more energy at that frequency. A rich, full voice lights up many bars at once.</li>
             </ul>
         </div>
@@ -396,6 +396,20 @@
             </div>
         </div>
 
+        <div class="daily-summary" style="margin-top:16px; text-align:center;">
+            <button onclick="exportReport()" style="
+                background: linear-gradient(135deg,#4ECDC4,#667eea);
+                color:white; border:none; border-radius:14px;
+                padding:14px 28px; font-size:1rem; font-weight:700;
+                cursor:pointer; width:100%; margin-bottom:4px;
+                -webkit-appearance:none;">
+                📄 Export Session Report (PDF)
+            </button>
+            <p style="color:#888;font-size:0.75rem;margin-bottom:0;">
+                Complete at least one rep to enable · opens print dialog
+            </p>
+        </div>
+
         <div class="daily-summary">
             <h3 class="summary-title">📅 4-Week Adventure Map</h3>
             <div class="week-nav" style="margin-bottom: 10px;">
@@ -423,6 +437,7 @@
         var startTime = 0;
         var timerInt = null;
         var autoStop = null;
+        var sampleInt = null;
         var streamRef = null;
         var currentWeek = 1;
         var currentDay = 1;
@@ -434,6 +449,10 @@
             dolphin: { am: 0, pm: 0, target: 10, name: 'Dolphin' },
             whale: { am: 0, pm: 0, target: 10, name: 'Blue Whale' }
         };
+
+        // ===== Session Report Data =====
+        var repLog = [];      // completed reps summary
+        var repSamples = [];  // samples during current rep
 
         // ===== Switch Morning/Afternoon =====
         function switchSession(session) {
@@ -668,6 +687,27 @@
 
                 drawVisualizer(type);
 
+                // Sample dB + Hz every 250 ms for the report
+                repSamples = [];
+                sampleInt = setInterval(function() {
+                    if (!analyserNode) return;
+                    var td = new Uint8Array(analyserNode.fftSize);
+                    analyserNode.getByteTimeDomainData(td);
+                    var rs = 0;
+                    for (var k = 0; k < td.length; k++) { var v = (td[k]-128)/128; rs += v*v; }
+                    var db = rs > 0 ? 20 * Math.log10(Math.sqrt(rs / td.length)) : -60;
+
+                    var fd = new Uint8Array(analyserNode.frequencyBinCount);
+                    analyserNode.getByteFrequencyData(fd);
+                    var bsz = (audioCtx.sampleRate || 44100) / analyserNode.fftSize;
+                    var fmin = Math.max(1, Math.round(80/bsz)), fmax = Math.round(350/bsz);
+                    var pb = fmin, pv = 0;
+                    for (var k = fmin; k <= fmax; k++) { if (fd[k] > pv) { pv = fd[k]; pb = k; } }
+                    var hz = pv > 40 ? Math.round(pb * bsz) : 0;
+
+                    repSamples.push({ db: db, hz: hz });
+                }, 250);
+
                 var duration = type === 'lion' ? 20000 : 5000;
                 autoStop = setTimeout(function() {
                     if (isRecording && activeType === type) {
@@ -698,6 +738,32 @@
             if (streamRef) { streamRef.getTracks().forEach(function(t) { t.stop(); }); streamRef = null; }
             if (timerInt) { clearInterval(timerInt); timerInt = null; }
             if (autoStop) { clearTimeout(autoStop); autoStop = null; }
+            if (sampleInt) { clearInterval(sampleInt); sampleInt = null; }
+
+            // Summarise this rep
+            var dur = startTime ? ((Date.now() - startTime) / 1000).toFixed(1) : '—';
+            if (repSamples.length > 0) {
+                var sumDb = 0, peakDb = -100, sumHz = 0, peakHz = 0, nHz = 0;
+                for (var i = 0; i < repSamples.length; i++) {
+                    var s = repSamples[i];
+                    sumDb += s.db;
+                    if (s.db > peakDb) peakDb = s.db;
+                    if (s.hz > 0) { sumHz += s.hz; if (s.hz > peakHz) peakHz = s.hz; nHz++; }
+                }
+                repLog.push({
+                    animal: type,
+                    session: currentSession,
+                    day: currentDay,
+                    rep: missions[type][currentSession] + 1,
+                    duration: dur,
+                    avgDb: Math.round(sumDb / repSamples.length),
+                    peakDb: Math.round(peakDb),
+                    avgHz: nHz > 0 ? Math.round(sumHz / nHz) : 0,
+                    peakHz: Math.round(peakHz),
+                    time: new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})
+                });
+                repSamples = [];
+            }
 
             var btn = document.getElementById(type + '-btn');
             var status = document.getElementById(type + '-status');
@@ -878,9 +944,9 @@
                 ctx.font = 'bold 11px sans-serif';
                 ctx.textBaseline = 'middle';
                 ctx.fillStyle = 'rgba(255,255,255,0.55)';
-                ctx.fillText('低', wx + 6, wy + wh / 2);
+                ctx.fillText('Low', wx + 6, wy + wh / 2);
                 ctx.textAlign = 'right';
-                ctx.fillText('高', wx + ww - 6, wy + wh / 2);
+                ctx.fillText('High', wx + ww - 6, wy + wh / 2);
                 ctx.textAlign = 'left';
 
                 // Needle (wiper)
@@ -987,6 +1053,103 @@
                 c.appendChild(conf);
             }
             setTimeout(function() { c.classList.remove('active'); }, 3000);
+        }
+
+        // ===== Session Report Export =====
+        function exportReport() {
+            if (repLog.length === 0) {
+                alert('No data yet — complete at least one rep first.');
+                return;
+            }
+
+            var dateStr = new Date().toLocaleDateString('en-GB', {
+                weekday:'long', year:'numeric', month:'long', day:'numeric'
+            });
+
+            // Group by animal
+            var groups = { lion: [], dolphin: [], whale: [] };
+            var animals = { lion:'🦁 Lion King Roar', dolphin:'🐬 Dolphin Leap', whale:'🐳 Blue Whale Dive' };
+            var descs  = { lion:'Sustain "Ah——" for 10–20 seconds', dolphin:'Glide low → high pitch', whale:'Glide high → low pitch' };
+
+            for (var i = 0; i < repLog.length; i++) {
+                var r = repLog[i];
+                if (groups[r.animal]) groups[r.animal].push(r);
+            }
+
+            function tableRows(rows) {
+                if (rows.length === 0) return '<tr><td colspan="7" style="color:#aaa;text-align:center;">No reps recorded</td></tr>';
+                return rows.map(function(r) {
+                    return '<tr>'
+                        + '<td>' + r.rep + '</td>'
+                        + '<td>' + r.time + '</td>'
+                        + '<td>' + r.duration + ' s</td>'
+                        + '<td>' + r.avgDb + ' dB</td>'
+                        + '<td>' + r.peakDb + ' dB</td>'
+                        + '<td>' + (r.avgHz > 0 ? r.avgHz + ' Hz' : '—') + '</td>'
+                        + '<td>' + (r.peakHz > 0 ? r.peakHz + ' Hz' : '—') + '</td>'
+                        + '</tr>';
+                }).join('');
+            }
+
+            function avg(rows, key) {
+                var vals = rows.map(function(r){return r[key];}).filter(function(v){return v > 0;});
+                if (!vals.length) return '—';
+                return Math.round(vals.reduce(function(a,b){return a+b;},0)/vals.length);
+            }
+
+            function animalSection(key) {
+                var rows = groups[key];
+                return '<div class="section">'
+                    + '<h2>' + animals[key] + '</h2>'
+                    + '<p class="desc">' + descs[key] + '</p>'
+                    + '<table><thead><tr>'
+                    + '<th>Rep</th><th>Time</th><th>Duration</th>'
+                    + '<th>Avg dB</th><th>Peak dB</th><th>Avg Hz</th><th>Peak Hz</th>'
+                    + '</tr></thead><tbody>' + tableRows(rows) + '</tbody></table>'
+                    + (rows.length > 0 ? '<p class="summary">Reps: <b>' + rows.length + '/10</b> · '
+                        + 'Avg Volume: <b>' + avg(rows,'avgDb') + ' dB</b> · '
+                        + 'Avg Pitch: <b>' + avg(rows,'avgHz') + ' Hz</b></p>' : '')
+                    + '</div>';
+            }
+
+            var session = currentSession === 'am' ? 'Morning (1st Round)' : 'Afternoon (2nd Round)';
+            var total = repLog.length;
+
+            var html = '<!DOCTYPE html><html><head><meta charset="UTF-8">'
+                + '<title>Joyful Zoo Voice Report</title>'
+                + '<style>'
+                + 'body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;'
+                + 'max-width:720px;margin:0 auto;padding:24px;color:#2c3e50;}'
+                + 'h1{color:#667eea;margin-bottom:4px;}'
+                + '.meta{color:#888;font-size:0.9rem;margin-bottom:20px;}'
+                + '.section{margin-bottom:28px;padding-bottom:20px;border-bottom:1px solid #eee;}'
+                + 'h2{font-size:1.1rem;margin-bottom:4px;}'
+                + '.desc{color:#888;font-size:0.85rem;margin:0 0 10px;}'
+                + 'table{width:100%;border-collapse:collapse;font-size:0.88rem;}'
+                + 'th{background:#667eea;color:white;padding:7px 10px;text-align:left;}'
+                + 'td{padding:6px 10px;border-bottom:1px solid #f0f0f0;}'
+                + 'tr:nth-child(even) td{background:#f9f9f9;}'
+                + '.summary{font-size:0.85rem;color:#555;margin:8px 0 0;}'
+                + '.footer{margin-top:24px;font-size:0.8rem;color:#bbb;text-align:center;}'
+                + '@media print{'
+                + 'body{padding:12px;}'
+                + '.section{page-break-inside:avoid;}'
+                + '}'
+                + '</style></head><body>'
+                + '<h1>🎪 Joyful Zoo Voice Training Report</h1>'
+                + '<p class="meta">' + dateStr + ' · Day ' + currentDay + ' · ' + session
+                + ' · Total reps: <b>' + total + '</b></p>'
+                + animalSection('lion')
+                + animalSection('dolphin')
+                + animalSection('whale')
+                + '<p class="footer">Generated by Joyful Zoo · LSVT LOUD® Voice Training · '
+                + new Date().toLocaleString() + '</p>'
+                + '<script>window.onload=function(){window.print();}<\/script>'
+                + '</body></html>';
+
+            var w = window.open('', '_blank');
+            if (w) { w.document.write(html); w.document.close(); }
+            else { alert('Please allow pop-ups for this page to export the report.'); }
         }
 
         // ===== Start =====
