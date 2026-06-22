@@ -306,7 +306,7 @@
             <div class="mission-card lion">
                 <span class="animal-emoji">🦁</span>
                 <h3 class="mission-title">Lion King Roar</h3>
-                <p class="mission-desc">Sustain "Ah——" for 10-15 seconds<br>Build vocal power & breath control</p>
+                <p class="mission-desc">Sustain "Ah——" for 10-20 seconds<br>Build vocal power & breath control</p>
 
                 <div class="timer-display hidden" id="lion-timer">0.0s</div>
 
@@ -658,7 +658,7 @@
 
                 drawVisualizer(type);
 
-                var duration = type === 'lion' ? 15000 : 5000;
+                var duration = type === 'lion' ? 20000 : 5000;
                 autoStop = setTimeout(function() {
                     if (isRecording && activeType === type) {
                         stopRecording(type);
@@ -708,7 +708,7 @@
             setTimeout(function() { adjustCount(type, 1); }, 400);
         }
 
-        // ===== Unified Visualizer =====
+        // ===== Unified Visualizer (real-time waveform curve) =====
         function drawVisualizer(type) {
             var canvas = document.getElementById(type + '-canvas');
             var ctx = canvas.getContext('2d');
@@ -718,58 +718,75 @@
             canvas.width = rect.width || 300;
             canvas.height = rect.height || 80;
 
-            var bufferLength = analyserNode.frequencyBinCount;
-            var dataArray = new Uint8Array(bufferLength);
+            analyserNode.fftSize = 2048;
+            analyserNode.smoothingTimeConstant = 0.8;
+            var waveLength = analyserNode.fftSize;
+            var waveData = new Uint8Array(waveLength);
+            var freqLength = analyserNode.frequencyBinCount;
+            var freqData = new Uint8Array(freqLength);
 
-            var colorScheme;
+            var waveColor, glowColor;
             if (type === 'lion') {
-                colorScheme = { hueStart: 30, hueEnd: 0, sat: 85 };
+                waveColor = '#FF8C42'; glowColor = 'rgba(255,140,66,0.6)';
             } else if (type === 'dolphin') {
-                colorScheme = { hueStart: 200, hueEnd: 120, sat: 80 };
+                waveColor = '#45B7D1'; glowColor = 'rgba(69,183,209,0.6)';
             } else {
-                colorScheme = { hueStart: 280, hueEnd: 180, sat: 75 };
+                waveColor = '#7C6CF9'; glowColor = 'rgba(124,108,249,0.6)';
             }
 
             function draw() {
                 if (!isRecording || activeType !== type) return;
                 animFrame = requestAnimationFrame(draw);
 
-                analyserNode.getByteFrequencyData(dataArray);
+                analyserNode.getByteTimeDomainData(waveData);
+                analyserNode.getByteFrequencyData(freqData);
 
                 ctx.fillStyle = '#1a1a2e';
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+                // Volume from frequency data
                 var sum = 0;
-                for (var i = 0; i < bufferLength; i++) sum += dataArray[i];
-                var avg = sum / bufferLength;
-                var volumePercent = Math.min((avg / 128) * 100, 100);
-                volumeBar.style.width = volumePercent + '%';
+                for (var i = 0; i < freqLength; i++) sum += freqData[i];
+                var avg = sum / freqLength;
+                volumeBar.style.width = Math.min((avg / 128) * 100, 100) + '%';
 
-                var barWidth = (canvas.width / bufferLength) * 2.5;
+                // Center guide line
+                ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(0, canvas.height / 2);
+                ctx.lineTo(canvas.width, canvas.height / 2);
+                ctx.stroke();
+
+                // Glow layer (thicker, transparent)
+                ctx.lineWidth = 6;
+                ctx.strokeStyle = glowColor;
+                ctx.shadowBlur = 0;
+                ctx.beginPath();
+                var sliceWidth = canvas.width / waveLength;
                 var x = 0;
-
-                for (var i = 0; i < bufferLength; i++) {
-                    var barHeight = (dataArray[i] / 255) * canvas.height * 0.9;
-                    var freqRatio = i / bufferLength;
-
-                    var hue = colorScheme.hueStart + (colorScheme.hueEnd - colorScheme.hueStart) * freqRatio;
-                    var intensity = dataArray[i] / 255;
-                    var sat = colorScheme.sat + intensity * 15;
-                    var light = 45 + intensity * 30;
-
-                    ctx.fillStyle = 'hsl(' + hue + ', ' + sat + '%, ' + light + '%)';
-
-                    if (dataArray[i] > 150) {
-                        ctx.shadowColor = 'hsl(' + hue + ', ' + sat + '%, 70%)';
-                        ctx.shadowBlur = 8;
-                    } else {
-                        ctx.shadowBlur = 0;
-                    }
-
-                    ctx.fillRect(x, canvas.height - barHeight, Math.max(barWidth, 2), barHeight);
-                    x += barWidth + 1;
+                for (var i = 0; i < waveLength; i++) {
+                    var y = (waveData[i] / 128.0) * (canvas.height / 2);
+                    if (i === 0) { ctx.moveTo(x, y); } else { ctx.lineTo(x, y); }
+                    x += sliceWidth;
                 }
+                ctx.lineTo(canvas.width, canvas.height / 2);
+                ctx.stroke();
 
+                // Sharp waveform line
+                ctx.lineWidth = 2;
+                ctx.strokeStyle = waveColor;
+                ctx.shadowColor = waveColor;
+                ctx.shadowBlur = 10;
+                ctx.beginPath();
+                x = 0;
+                for (var i = 0; i < waveLength; i++) {
+                    var y = (waveData[i] / 128.0) * (canvas.height / 2);
+                    if (i === 0) { ctx.moveTo(x, y); } else { ctx.lineTo(x, y); }
+                    x += sliceWidth;
+                }
+                ctx.lineTo(canvas.width, canvas.height / 2);
+                ctx.stroke();
                 ctx.shadowBlur = 0;
             }
 
