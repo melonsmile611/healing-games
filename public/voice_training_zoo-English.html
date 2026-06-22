@@ -708,7 +708,7 @@
             setTimeout(function() { adjustCount(type, 1); }, 400);
         }
 
-        // ===== Unified Visualizer (frequency bar chart) =====
+        // ===== Unified Visualizer (frequency bars + real-time dB & Hz) =====
         function drawVisualizer(type) {
             var canvas = document.getElementById(type + '-canvas');
             var ctx = canvas.getContext('2d');
@@ -721,7 +721,8 @@
             analyserNode.fftSize = 256;
             analyserNode.smoothingTimeConstant = 0.75;
             var bufLen = analyserNode.frequencyBinCount; // 128
-            var dataArray = new Uint8Array(bufLen);
+            var freqData = new Uint8Array(bufLen);
+            var timeData = new Uint8Array(analyserNode.fftSize); // for RMS
 
             var barColor, peakColor;
             if (type === 'lion') {
@@ -732,38 +733,80 @@
                 barColor = '#7C6CF9'; peakColor = '#C9B8FF';
             }
 
-            // Show only the vocal range (roughly first 48 bins out of 128)
             var BARS = 48;
             var barW = Math.floor((canvas.width - BARS) / BARS);
+            var SR = audioCtx.sampleRate || 44100;
 
             function draw() {
                 if (!isRecording || activeType !== type) return;
                 animFrame = requestAnimationFrame(draw);
 
-                analyserNode.getByteFrequencyData(dataArray);
+                analyserNode.getByteFrequencyData(freqData);
+                analyserNode.getByteTimeDomainData(timeData);
 
                 ctx.fillStyle = '#1a1a2e';
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-                // Volume bar
+                // ── Volume bar (bottom strip) ──
                 var sum = 0;
-                for (var i = 0; i < bufLen; i++) sum += dataArray[i];
+                for (var i = 0; i < bufLen; i++) sum += freqData[i];
                 volumeBar.style.width = Math.min((sum / bufLen / 128) * 100, 100) + '%';
 
-                // Draw bars
+                // ── Frequency bars ──
                 for (var i = 0; i < BARS; i++) {
-                    var val = dataArray[i];
-                    var barH = Math.floor((val / 255) * canvas.height * 0.95);
+                    var val = freqData[i];
+                    var barH = Math.floor((val / 255) * (canvas.height - 42) * 0.95);
                     var x = i * (barW + 1);
                     var y = canvas.height - barH;
-
-                    // Gradient: brighter at top
                     var grad = ctx.createLinearGradient(0, y, 0, canvas.height);
                     grad.addColorStop(0, peakColor);
                     grad.addColorStop(1, barColor);
                     ctx.fillStyle = grad;
                     ctx.fillRect(x, y, barW, barH);
                 }
+
+                // ── Compute dB from RMS ──
+                var rmsSum = 0;
+                for (var i = 0; i < timeData.length; i++) {
+                    var v = (timeData[i] - 128) / 128.0;
+                    rmsSum += v * v;
+                }
+                var rms = Math.sqrt(rmsSum / timeData.length);
+                var db = rms > 0.001 ? Math.round(20 * Math.log10(rms)) : -60;
+
+                // ── Compute dominant frequency ──
+                var peakBin = 2; var peakVal = 0;
+                for (var i = 2; i < BARS; i++) {
+                    if (freqData[i] > peakVal) { peakVal = freqData[i]; peakBin = i; }
+                }
+                var hz = peakVal > 15
+                    ? Math.round(peakBin * SR / analyserNode.fftSize)
+                    : 0;
+
+                // ── Stats panel (top of canvas) ──
+                ctx.fillStyle = 'rgba(0,0,0,0.55)';
+                ctx.fillRect(0, 0, canvas.width, 38);
+
+                ctx.font = 'bold 13px "SF Mono", "Courier New", monospace';
+                ctx.textBaseline = 'middle';
+
+                // dB value — color-coded: green quiet → yellow → red loud
+                var dbNorm = Math.max(0, Math.min(1, (db + 60) / 55));
+                var r = Math.round(dbNorm * 255);
+                var g = Math.round((1 - dbNorm * 0.6) * 200);
+                ctx.fillStyle = 'rgb(' + r + ',' + g + ',80)';
+                ctx.fillText('🔊 ' + db + ' dB', 8, 13);
+
+                // Hz value
+                ctx.fillStyle = peakColor;
+                ctx.fillText('🎵 ' + (hz > 0 ? hz + ' Hz' : '-- Hz'), 8, 29);
+
+                // Separator line
+                ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(0, 38); ctx.lineTo(canvas.width, 38);
+                ctx.stroke();
             }
 
             draw();
