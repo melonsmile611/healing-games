@@ -107,7 +107,7 @@
         }
 
         .visualizer-container {
-            height: 80px; background: #1a1a2e; border-radius: 12px;
+            height: 120px; background: #1a1a2e; border-radius: 12px;
             margin: 10px 0; overflow: hidden; display: none;
             border: 2px solid #e0e0e0;
         }
@@ -708,7 +708,7 @@
             setTimeout(function() { adjustCount(type, 1); }, 400);
         }
 
-        // ===== Unified Visualizer (real-time waveform curve) =====
+        // ===== Unified Visualizer (scrolling amplitude envelope) =====
         function drawVisualizer(type) {
             var canvas = document.getElementById(type + '-canvas');
             var ctx = canvas.getContext('2d');
@@ -716,24 +716,31 @@
 
             var rect = canvas.parentElement.getBoundingClientRect();
             canvas.width = rect.width || 300;
-            canvas.height = rect.height || 80;
+            canvas.height = rect.height || 120;
 
-            // 512 points = wider cycles on small canvas; less smoothing = more responsive
-            analyserNode.fftSize = 512;
-            analyserNode.smoothingTimeConstant = 0.3;
+            analyserNode.fftSize = 1024;
+            analyserNode.smoothingTimeConstant = 0.2;
             var waveLength = analyserNode.fftSize;
             var waveData = new Uint8Array(waveLength);
             var freqLength = analyserNode.frequencyBinCount;
             var freqData = new Uint8Array(freqLength);
 
-            var waveColor, glowColor;
+            var waveColor, glowColor, fillColor;
             if (type === 'lion') {
-                waveColor = '#FF8C42'; glowColor = 'rgba(255,140,66,0.5)';
+                waveColor = '#FF8C42'; glowColor = 'rgba(255,140,66,0.8)'; fillColor = 'rgba(255,140,66,0.25)';
             } else if (type === 'dolphin') {
-                waveColor = '#45B7D1'; glowColor = 'rgba(69,183,209,0.5)';
+                waveColor = '#45B7D1'; glowColor = 'rgba(69,183,209,0.8)'; fillColor = 'rgba(69,183,209,0.25)';
             } else {
-                waveColor = '#7C6CF9'; glowColor = 'rgba(124,108,249,0.5)';
+                waveColor = '#7C6CF9'; glowColor = 'rgba(124,108,249,0.8)'; fillColor = 'rgba(124,108,249,0.25)';
             }
+
+            // Scrolling amplitude history — one value per pixel column
+            var histLen = canvas.width;
+            var ampHistory = [];
+            for (var j = 0; j < histLen; j++) ampHistory.push(0);
+            var frameAcc = 0;        // accumulated RMS across frames
+            var frameCount = 0;
+            var FRAMES_PER_STEP = 4; // push a new bar every 4 animation frames (~67ms)
 
             function draw() {
                 if (!isRecording || activeType !== type) return;
@@ -742,17 +749,37 @@
                 analyserNode.getByteTimeDomainData(waveData);
                 analyserNode.getByteFrequencyData(freqData);
 
+                // RMS from time-domain
+                var rmsSum = 0;
+                for (var i = 0; i < waveLength; i++) {
+                    var v = (waveData[i] - 128) / 128.0;
+                    rmsSum += v * v;
+                }
+                var rms = Math.sqrt(rmsSum / waveLength);
+
+                // Volume bar from frequency data
+                var freqSum = 0;
+                for (var i = 0; i < freqLength; i++) freqSum += freqData[i];
+                volumeBar.style.width = Math.min((freqSum / freqLength / 128) * 100, 100) + '%';
+
+                // Accumulate RMS and push to history on interval
+                frameAcc += rms;
+                frameCount++;
+                if (frameCount >= FRAMES_PER_STEP) {
+                    var avgRms = frameAcc / frameCount;
+                    var normalized = Math.min(avgRms * 8, 1); // amplify x8
+                    ampHistory.shift();
+                    ampHistory.push(normalized);
+                    frameAcc = 0;
+                    frameCount = 0;
+                }
+
+                // Clear
                 ctx.fillStyle = '#1a1a2e';
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-                // Volume from frequency data
-                var sum = 0;
-                for (var i = 0; i < freqLength; i++) sum += freqData[i];
-                var avg = sum / freqLength;
-                volumeBar.style.width = Math.min((avg / 128) * 100, 100) + '%';
-
                 // Center guide line
-                ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+                ctx.strokeStyle = 'rgba(255,255,255,0.1)';
                 ctx.lineWidth = 1;
                 ctx.beginPath();
                 ctx.moveTo(0, canvas.height / 2);
@@ -760,34 +787,40 @@
                 ctx.stroke();
 
                 var centerY = canvas.height / 2;
-                var amp = centerY * 0.9; // use 90% of half-height
-                var gain = 4;            // amplify small microphone signals
-                var sliceWidth = canvas.width / waveLength;
+                var bw = canvas.width / histLen;
 
-                function buildPath(x0) {
-                    ctx.beginPath();
-                    for (var i = 0; i < waveLength; i++) {
-                        // deviation from silence (-1 to +1), amplified, y flipped so voice goes up
-                        var dev = ((waveData[i] - 128) / 128.0) * gain;
-                        dev = Math.max(-1, Math.min(1, dev));
-                        var y = centerY - dev * amp;
-                        if (i === 0) { ctx.moveTo(x0, y); } else { ctx.lineTo(x0 + i * sliceWidth, y); }
-                    }
+                // Build mirrored filled shape
+                ctx.beginPath();
+                ctx.moveTo(0, centerY);
+                for (var i = 0; i < histLen; i++) {
+                    ctx.lineTo(i * bw, centerY - ampHistory[i] * centerY * 0.9);
                 }
+                ctx.lineTo(canvas.width, centerY);
+                for (var i = histLen - 1; i >= 0; i--) {
+                    ctx.lineTo(i * bw, centerY + ampHistory[i] * centerY * 0.9);
+                }
+                ctx.closePath();
+                ctx.fillStyle = fillColor;
+                ctx.fill();
 
-                // Glow layer
-                buildPath(0);
-                ctx.lineWidth = 6;
-                ctx.strokeStyle = glowColor;
-                ctx.shadowBlur = 0;
-                ctx.stroke();
-
-                // Sharp waveform line
-                buildPath(0);
+                // Top edge line (glow)
+                ctx.beginPath();
+                ctx.moveTo(0, centerY);
+                for (var i = 0; i < histLen; i++) {
+                    ctx.lineTo(i * bw, centerY - ampHistory[i] * centerY * 0.9);
+                }
                 ctx.lineWidth = 2;
                 ctx.strokeStyle = waveColor;
-                ctx.shadowColor = waveColor;
-                ctx.shadowBlur = 12;
+                ctx.shadowColor = glowColor;
+                ctx.shadowBlur = 10;
+                ctx.stroke();
+
+                // Bottom edge line (mirror)
+                ctx.beginPath();
+                ctx.moveTo(0, centerY);
+                for (var i = 0; i < histLen; i++) {
+                    ctx.lineTo(i * bw, centerY + ampHistory[i] * centerY * 0.9);
+                }
                 ctx.stroke();
                 ctx.shadowBlur = 0;
             }
