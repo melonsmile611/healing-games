@@ -823,15 +823,11 @@
             var fundMinBin = Math.max(1, Math.round(80  / binSize));
             var fundMaxBin = Math.round(350 / binSize);
 
-            // Pitch smoothing
+            // Pitch smoothing + baseline tracking
             var smoothHz = 0;
+            var baselineHz = 0;   // captured on first valid reading (dolphin & whale)
             var trailFrame = 0;
-
-            // Linear scale: 80–400 Hz → 0–1
-            var PITCH_LO = 80, PITCH_HI = 400;
-            function hzToPos(h) {
-                return Math.max(0, Math.min(1, (h - PITCH_LO) / (PITCH_HI - PITCH_LO)));
-            }
+            var DELTA_RANGE = 130; // ±130 Hz = full scale for relative gauge
 
             function draw() {
                 if (!isRecording || activeType !== type) return;
@@ -848,7 +844,7 @@
                 for (var i = 0; i < bufLen; i++) sum += freqData[i];
                 volumeBar.style.width = Math.min((sum / bufLen / 128) * 100, 100) + '%';
 
-                // ── Frequency bars (0–4000 Hz, grouped) ──
+                // ── Frequency bars (0–4000 Hz) ──
                 for (var i = 0; i < BARS; i++) {
                     var startBin = i * binsPerBar;
                     var maxVal = 0;
@@ -881,7 +877,7 @@
                 }
                 var rawHz = peakVal > 40 ? peakBin * binSize : 0;
 
-                // EMA: slower response to reduce overshoot
+                // EMA smoothing
                 if (rawHz > 0) {
                     smoothHz = smoothHz > 0 ? smoothHz * 0.72 + rawHz * 0.28 : rawHz;
                 } else {
@@ -890,26 +886,47 @@
                 }
                 var hz = smoothHz > 0 ? Math.round(smoothHz) : 0;
 
-                // ── Direction trend ──
-                trailFrame++;
-                var trend = '';
-                if (trailFrame % 3 === 0 && hz > 0) {
-                    if (typeof draw._prevHz === 'undefined') draw._prevHz = hz;
-                    var diff = hz - draw._prevHz;
-                    if      (diff >  8) trend = ' ↑';
-                    else if (diff < -8) trend = ' ↓';
-                    else                trend = ' →';
-                    draw._prevHz = hz * 0.5 + draw._prevHz * 0.5;
-                } else {
-                    trend = draw._trend || '';
+                // Capture baseline on first valid reading (dolphin & whale only)
+                if (type !== 'lion' && hz > 0 && baselineHz === 0) {
+                    baselineHz = hz;
                 }
-                draw._trend = trend;
 
-                // ── Stats panel (top 26px: dB + Hz) ──
+                // ── Compute needle position & display value ──
+                var pitchPos = -1;   // -1 = hide needle
+                var deltaHz  = 0;
+                var hzLabel  = '-- Hz';
+                var trend    = '';
+
+                if (type === 'lion') {
+                    // Absolute: 80–400 Hz linear
+                    if (hz > 0) {
+                        pitchPos = Math.max(0.01, Math.min(0.99, (hz - 80) / (400 - 80)));
+                        hzLabel  = hz + ' Hz';
+                    }
+                } else {
+                    // Relative to baseline — stays where pitch IS, not snapping back
+                    if (hz > 0 && baselineHz > 0) {
+                        deltaHz  = hz - baselineHz;
+                        pitchPos = Math.max(0.01, Math.min(0.99, 0.5 + deltaHz / (2 * DELTA_RANGE)));
+                        hzLabel  = (deltaHz >= 0 ? '+' : '') + Math.round(deltaHz) + ' Hz';
+                    }
+                }
+
+                // Direction trend arrow
+                trailFrame++;
+                if (trailFrame % 3 === 0 && hz > 0) {
+                    if (!draw._p) draw._p = hz;
+                    var df = hz - draw._p;
+                    trend = df > 6 ? ' ↑' : df < -6 ? ' ↓' : ' →';
+                    draw._p = hz * 0.5 + draw._p * 0.5;
+                } else { trend = draw._tr || ''; }
+                draw._tr = trend;
+
+                // ── Stats panel (top 26px) ──
                 ctx.fillStyle = 'rgba(0,0,0,0.6)';
                 ctx.fillRect(0, 0, canvas.width, 26);
 
-                ctx.font = 'bold 12px "SF Mono", "Courier New", monospace';
+                ctx.font = 'bold 12px "SF Mono","Courier New",monospace';
                 ctx.textBaseline = 'middle';
 
                 var dbNorm = Math.max(0, Math.min(1, (db + 60) / 55));
@@ -919,74 +936,101 @@
                 ctx.fillText('🔊 ' + db + ' dB', 8, 13);
 
                 ctx.fillStyle = peakColor;
-                ctx.fillText('🎵 ' + (hz > 0 ? hz + ' Hz' + trend : '-- Hz'), canvas.width / 2, 13);
+                ctx.fillText('🎵 ' + hzLabel + trend, canvas.width / 2, 13);
 
                 // ── Wiper gauge (26–68px) ──
                 var wx = 0, wy = 26, ww = canvas.width, wh = 42;
+                var cx = wx + ww / 2; // center x
 
-                // Gradient background: blue(低) → teal → red(高)
-                var bgGrad = ctx.createLinearGradient(wx, 0, wx + ww, 0);
-                bgGrad.addColorStop(0,    'rgba(60,80,200,0.45)');
-                bgGrad.addColorStop(0.5,  'rgba(40,180,160,0.35)');
-                bgGrad.addColorStop(1,    'rgba(220,60,60,0.45)');
-                ctx.fillStyle = bgGrad;
-                ctx.fillRect(wx, wy, ww, wh);
+                // Background
+                if (type === 'lion') {
+                    // Absolute: blue → teal → red
+                    var bg = ctx.createLinearGradient(wx, 0, wx + ww, 0);
+                    bg.addColorStop(0,   'rgba(60,80,200,0.45)');
+                    bg.addColorStop(0.5, 'rgba(40,180,160,0.35)');
+                    bg.addColorStop(1,   'rgba(220,60,60,0.45)');
+                    ctx.fillStyle = bg;
+                    ctx.fillRect(wx, wy, ww, wh);
+                } else {
+                    // Relative: dark edges, highlighted center zone
+                    ctx.fillStyle = 'rgba(30,30,60,0.7)';
+                    ctx.fillRect(wx, wy, ww, wh);
+                    // Color zone from center toward needle
+                    if (pitchPos >= 0) {
+                        var halfW = Math.abs(pitchPos - 0.5) * ww;
+                        var zoneX = pitchPos > 0.5 ? cx : cx - halfW;
+                        var zg = ctx.createLinearGradient(zoneX, 0, zoneX + halfW, 0);
+                        if (pitchPos > 0.5) {
+                            zg.addColorStop(0, 'rgba(78,205,196,0.1)');
+                            zg.addColorStop(1, 'rgba(78,205,196,0.4)');
+                        } else {
+                            zg.addColorStop(0, 'rgba(107,78,249,0.4)');
+                            zg.addColorStop(1, 'rgba(107,78,249,0.1)');
+                        }
+                        ctx.fillStyle = zg;
+                        ctx.fillRect(zoneX, wy, halfW, wh);
+                    }
+                }
 
-                // Center tick mark
-                ctx.strokeStyle = 'rgba(255,255,255,0.15)';
-                ctx.lineWidth = 1;
-                ctx.beginPath();
-                ctx.moveTo(wx + ww / 2, wy + 4);
-                ctx.lineTo(wx + ww / 2, wy + wh - 4);
-                ctx.stroke();
+                // Center baseline mark (dolphin/whale only)
+                if (type !== 'lion') {
+                    ctx.strokeStyle = 'rgba(255,255,255,0.5)';
+                    ctx.lineWidth = 2;
+                    ctx.setLineDash([3, 3]);
+                    ctx.beginPath();
+                    ctx.moveTo(cx, wy + 4); ctx.lineTo(cx, wy + wh - 4);
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+                }
 
                 // Labels
-                ctx.font = 'bold 11px sans-serif';
+                ctx.font = 'bold 10px sans-serif';
                 ctx.textBaseline = 'middle';
-                ctx.fillStyle = 'rgba(255,255,255,0.55)';
-                ctx.fillText('Low', wx + 6, wy + wh / 2);
-                ctx.textAlign = 'right';
-                ctx.fillText('High', wx + ww - 6, wy + wh / 2);
+                ctx.fillStyle = 'rgba(255,255,255,0.5)';
+                if (type === 'lion') {
+                    ctx.fillText('Low', wx + 6, wy + wh / 2);
+                    ctx.textAlign = 'right';
+                    ctx.fillText('High', wx + ww - 6, wy + wh / 2);
+                } else {
+                    ctx.fillText('Lower', wx + 6, wy + wh / 2);
+                    ctx.textAlign = 'center';
+                    ctx.fillStyle = 'rgba(255,255,255,0.3)';
+                    ctx.fillText(baselineHz > 0 ? 'Start ' + baselineHz + 'Hz' : 'Start', cx, wy + wh / 2);
+                    ctx.textAlign = 'right';
+                    ctx.fillStyle = 'rgba(255,255,255,0.5)';
+                    ctx.fillText('Higher', wx + ww - 6, wy + wh / 2);
+                }
                 ctx.textAlign = 'left';
 
-                // Needle (wiper)
-                if (hz > 0) {
-                    var needleX = wx + ww * hzToPos(hz);
+                // Needle
+                if (pitchPos >= 0) {
+                    var needleX = wx + ww * pitchPos;
 
-                    // Outer glow
                     ctx.save();
                     ctx.shadowColor = peakColor;
                     ctx.shadowBlur = 18;
                     ctx.strokeStyle = peakColor;
                     ctx.lineWidth = 4;
                     ctx.beginPath();
-                    ctx.moveTo(needleX, wy + 3);
-                    ctx.lineTo(needleX, wy + wh - 3);
+                    ctx.moveTo(needleX, wy + 3); ctx.lineTo(needleX, wy + wh - 3);
                     ctx.stroke();
                     ctx.restore();
 
-                    // Sharp white line
                     ctx.strokeStyle = 'white';
                     ctx.lineWidth = 2;
                     ctx.beginPath();
-                    ctx.moveTo(needleX, wy + 3);
-                    ctx.lineTo(needleX, wy + wh - 3);
+                    ctx.moveTo(needleX, wy + 3); ctx.lineTo(needleX, wy + wh - 3);
                     ctx.stroke();
 
-                    // Top & bottom arrowhead triangles
                     ctx.fillStyle = 'white';
                     ctx.beginPath();
                     ctx.moveTo(needleX, wy + 1);
-                    ctx.lineTo(needleX - 5, wy + 9);
-                    ctx.lineTo(needleX + 5, wy + 9);
-                    ctx.closePath();
-                    ctx.fill();
+                    ctx.lineTo(needleX - 5, wy + 9); ctx.lineTo(needleX + 5, wy + 9);
+                    ctx.closePath(); ctx.fill();
                     ctx.beginPath();
                     ctx.moveTo(needleX, wy + wh - 1);
-                    ctx.lineTo(needleX - 5, wy + wh - 9);
-                    ctx.lineTo(needleX + 5, wy + wh - 9);
-                    ctx.closePath();
-                    ctx.fill();
+                    ctx.lineTo(needleX - 5, wy + wh - 9); ctx.lineTo(needleX + 5, wy + wh - 9);
+                    ctx.closePath(); ctx.fill();
                 }
 
                 // Separator
