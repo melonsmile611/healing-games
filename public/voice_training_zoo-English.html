@@ -819,9 +819,9 @@
             var binsPerBar = Math.max(1, Math.floor(maxBarBin / BARS));
             var barW = Math.floor((canvas.width - BARS) / BARS);
 
-            // Fundamental: 80–350 Hz only (avoids 2nd harmonics of 200+ Hz voices)
-            var fundMinBin = Math.max(1, Math.round(80  / binSize));
-            var fundMaxBin = Math.round(350 / binSize);
+            // Fundamental: 80–600 Hz (wide enough for high-pitched dolphin/whale voices)
+            var fundMinBin = Math.max(1, Math.round(80 / binSize));
+            var fundMaxBin = Math.min(bufLen - 1, Math.round(600 / binSize));
 
             // Pitch smoothing + baseline tracking
             var smoothHz = 0;
@@ -872,20 +872,21 @@
                 var rms = Math.sqrt(rmsSum / timeData.length);
                 var db = rms > 0.001 ? Math.round(20 * Math.log10(rms)) : -60;
 
-                // ── Fundamental frequency (80–350 Hz) ──
-                var peakBin = fundMinBin; var peakVal = 0;
+                // ── Fundamental via HPS (80–600 Hz) ──
+                // HPS: score each candidate bin by multiplying energy at f, 2f, 3f.
+                // The true fundamental scores highest; harmonics score lower (their 2f/3f
+                // fall outside the voice band or have little energy).
+                var peakBin = fundMinBin, hpsPeak = 0, hasSignal = 0;
                 for (var i = fundMinBin; i <= fundMaxBin; i++) {
-                    if (freqData[i] > peakVal) { peakVal = freqData[i]; peakBin = i; }
+                    var raw = freqData[i];
+                    if (raw > hasSignal) hasSignal = raw;
+                    var hps = raw;
+                    var h2i = 2 * i, h3i = 3 * i;
+                    if (h2i < bufLen) hps = (hps * freqData[h2i]) / 255;
+                    if (h3i < bufLen) hps = (hps * freqData[h3i]) / 255;
+                    if (hps > hpsPeak) { hpsPeak = hps; peakBin = i; }
                 }
-                // Sub-harmonic check: if peak is likely a 2nd harmonic, use its half-bin
-                // (e.g. voice at 150 Hz whose 300 Hz overtone dominates → use bin for 150 Hz)
-                if (peakVal > 55) {
-                    var halfBin = Math.round(peakBin / 2);
-                    if (halfBin >= fundMinBin && freqData[halfBin] > 28) {
-                        peakBin = halfBin;
-                    }
-                }
-                var rawHz = peakVal > 55 ? peakBin * binSize : 0;
+                var rawHz = hasSignal > 45 ? peakBin * binSize : 0;
 
                 // EMA smoothing (slower → less jittery)
                 if (rawHz > 0) {
