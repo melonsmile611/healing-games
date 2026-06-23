@@ -354,6 +354,10 @@
                 <div class="volume-bar"><div class="volume-fill" id="dolphin-volume"></div></div>
                 <p class="volume-label">Pitch Height</p>
 
+                <div id="dolphin-setbtn" style="display:none; text-align:center; margin:6px 0 2px;">
+                    <button onclick="setBaselineFor('dolphin')" style="background:#7048e8;color:white;border:none;border-radius:20px;padding:5px 18px;font-size:13px;cursor:pointer;font-weight:600;">📍 Set Baseline</button>
+                </div>
+
                 <p class="status-text" id="dolphin-status">Tap to start recording 🐬</p>
 
                 <div class="counter">
@@ -380,6 +384,10 @@
 
                 <div class="volume-bar"><div class="volume-fill" id="whale-volume"></div></div>
                 <p class="volume-label">Depth Control</p>
+
+                <div id="whale-setbtn" style="display:none; text-align:center; margin:6px 0 2px;">
+                    <button onclick="setBaselineFor('whale')" style="background:#5c7cfa;color:white;border:none;border-radius:20px;padding:5px 18px;font-size:13px;cursor:pointer;font-weight:600;">📍 Set Baseline</button>
+                </div>
 
                 <p class="status-text" id="whale-status">Tap to start recording 🐳</p>
 
@@ -434,6 +442,7 @@
         var animFrame = null;
         var isRecording = false;
         var activeType = null;
+        var baselinePending = {}; // { dolphin: true/false, whale: true/false }
         var startTime = 0;
         var timerInt = null;
         var autoStop = null;
@@ -676,6 +685,13 @@
                 status.className = 'status-text recording';
                 viz.classList.add('active');
 
+                // Show Set Baseline button for dolphin/whale
+                if (type !== 'lion') {
+                    baselinePending[type] = false;
+                    var sbtn = document.getElementById(type + '-setbtn');
+                    if (sbtn) sbtn.style.display = 'block';
+                }
+
                 if (type === 'lion') {
                     document.getElementById('lion-timer').classList.remove('hidden');
                     startTime = Date.now();
@@ -728,6 +744,12 @@
             });
         }
 
+        function setBaselineFor(type) {
+            baselinePending[type] = true;
+            var btn = document.getElementById(type + '-setbtn');
+            if (btn) btn.style.display = 'none';
+        }
+
         function stopRecording(type) {
             isRecording = false;
             activeType = null;
@@ -739,6 +761,12 @@
             if (timerInt) { clearInterval(timerInt); timerInt = null; }
             if (autoStop) { clearTimeout(autoStop); autoStop = null; }
             if (sampleInt) { clearInterval(sampleInt); sampleInt = null; }
+
+            // Hide Set Baseline button
+            ['dolphin', 'whale'].forEach(function(t) {
+                var sbtn = document.getElementById(t + '-setbtn');
+                if (sbtn) sbtn.style.display = 'none';
+            });
 
             // Summarise this rep
             var dur = startTime ? ((Date.now() - startTime) / 1000).toFixed(1) : '—';
@@ -825,11 +853,10 @@
 
             // Pitch smoothing + baseline tracking
             var smoothHz = 0;
-            var baselineHz = 0;
-            var baselineSamples = [];  // collect frames before locking baseline
-            var BASELINE_FRAMES = 12; // ~0.5 s of valid readings → median → lock
+            var baselineHz = 0;  // set manually by user via Set Baseline button
             var trailFrame = 0;
-            var DELTA_RANGE = 250; // ±250 Hz = full scale (less jittery than 130)
+            var DELTA_RANGE = 250; // ±250 Hz = full scale
+            var DEADBAND = 20;    // Hz — ignore tiny drift near baseline
 
             function draw() {
                 if (!isRecording || activeType !== type) return;
@@ -897,14 +924,10 @@
                 }
                 var hz = smoothHz > 0 ? Math.round(smoothHz) : 0;
 
-                // Capture baseline from first BASELINE_FRAMES valid readings (dolphin & whale)
-                // Use median to resist noise spikes
-                if (type !== 'lion' && hz > 0 && baselineHz === 0) {
-                    baselineSamples.push(hz);
-                    if (baselineSamples.length >= BASELINE_FRAMES) {
-                        var sorted = baselineSamples.slice().sort(function(a,b){return a-b;});
-                        baselineHz = sorted[Math.floor(sorted.length / 2)];
-                    }
+                // Lock baseline when user presses "Set Baseline" button
+                if (type !== 'lion' && baselinePending[type] && hz > 0) {
+                    baselineHz = hz;
+                    baselinePending[type] = false;
                 }
 
                 // ── Compute needle position & display value ──
@@ -921,12 +944,13 @@
                     }
                 } else {
                     if (baselineHz === 0) {
-                        // Still collecting baseline samples — show progress
-                        if (hz > 0) hzLabel = 'Set… ' + baselineSamples.length + '/' + BASELINE_FRAMES;
+                        hzLabel = hz > 0 ? hz + ' Hz — press 📍' : '-- Hz';
                     } else if (hz > 0) {
-                        // Relative to baseline — needle stays where pitch IS
-                        deltaHz  = hz - baselineHz;
-                        pitchPos = Math.max(0.01, Math.min(0.99, 0.5 + deltaHz / (2 * DELTA_RANGE)));
+                        // Relative to baseline with deadband to absorb quantisation noise
+                        deltaHz = hz - baselineHz;
+                        var adjDelta = Math.abs(deltaHz) < DEADBAND ? 0
+                            : (deltaHz > 0 ? deltaHz - DEADBAND : deltaHz + DEADBAND);
+                        pitchPos = Math.max(0.01, Math.min(0.99, 0.5 + adjDelta / (2 * DELTA_RANGE)));
                         hzLabel  = (deltaHz >= 0 ? '+' : '') + Math.round(deltaHz) + ' Hz';
                     }
                 }
@@ -1014,7 +1038,7 @@
                     ctx.fillText('Lower', wx + 6, wy + wh / 2);
                     ctx.textAlign = 'center';
                     ctx.fillStyle = 'rgba(255,255,255,0.3)';
-                    ctx.fillText(baselineHz > 0 ? 'Start ' + baselineHz + 'Hz' : 'Calibrating…', cx, wy + wh / 2);
+                    ctx.fillText(baselineHz > 0 ? 'Start ' + baselineHz + 'Hz' : 'Press 📍 Set Baseline', cx, wy + wh / 2);
                     ctx.textAlign = 'right';
                     ctx.fillStyle = 'rgba(255,255,255,0.5)';
                     ctx.fillText('Higher', wx + ww - 6, wy + wh / 2);
