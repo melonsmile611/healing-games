@@ -825,9 +825,11 @@
 
             // Pitch smoothing + baseline tracking
             var smoothHz = 0;
-            var baselineHz = 0;   // captured on first valid reading (dolphin & whale)
+            var baselineHz = 0;
+            var baselineSamples = [];  // collect frames before locking baseline
+            var BASELINE_FRAMES = 12; // ~0.5 s of valid readings → median → lock
             var trailFrame = 0;
-            var DELTA_RANGE = 130; // ±130 Hz = full scale for relative gauge
+            var DELTA_RANGE = 250; // ±250 Hz = full scale (less jittery than 130)
 
             function draw() {
                 if (!isRecording || activeType !== type) return;
@@ -875,20 +877,33 @@
                 for (var i = fundMinBin; i <= fundMaxBin; i++) {
                     if (freqData[i] > peakVal) { peakVal = freqData[i]; peakBin = i; }
                 }
-                var rawHz = peakVal > 40 ? peakBin * binSize : 0;
+                // Sub-harmonic check: if peak is likely a 2nd harmonic, use its half-bin
+                // (e.g. voice at 150 Hz whose 300 Hz overtone dominates → use bin for 150 Hz)
+                if (peakVal > 55) {
+                    var halfBin = Math.round(peakBin / 2);
+                    if (halfBin >= fundMinBin && freqData[halfBin] > 28) {
+                        peakBin = halfBin;
+                    }
+                }
+                var rawHz = peakVal > 55 ? peakBin * binSize : 0;
 
-                // EMA smoothing
+                // EMA smoothing (slower → less jittery)
                 if (rawHz > 0) {
-                    smoothHz = smoothHz > 0 ? smoothHz * 0.72 + rawHz * 0.28 : rawHz;
+                    smoothHz = smoothHz > 0 ? smoothHz * 0.82 + rawHz * 0.18 : rawHz;
                 } else {
-                    smoothHz = smoothHz * 0.88;
+                    smoothHz = smoothHz * 0.92;
                     if (smoothHz < 85) smoothHz = 0;
                 }
                 var hz = smoothHz > 0 ? Math.round(smoothHz) : 0;
 
-                // Capture baseline on first valid reading (dolphin & whale only)
+                // Capture baseline from first BASELINE_FRAMES valid readings (dolphin & whale)
+                // Use median to resist noise spikes
                 if (type !== 'lion' && hz > 0 && baselineHz === 0) {
-                    baselineHz = hz;
+                    baselineSamples.push(hz);
+                    if (baselineSamples.length >= BASELINE_FRAMES) {
+                        var sorted = baselineSamples.slice().sort(function(a,b){return a-b;});
+                        baselineHz = sorted[Math.floor(sorted.length / 2)];
+                    }
                 }
 
                 // ── Compute needle position & display value ──
@@ -904,8 +919,11 @@
                         hzLabel  = hz + ' Hz';
                     }
                 } else {
-                    // Relative to baseline — stays where pitch IS, not snapping back
-                    if (hz > 0 && baselineHz > 0) {
+                    if (baselineHz === 0) {
+                        // Still collecting baseline samples — show progress
+                        if (hz > 0) hzLabel = 'Set… ' + baselineSamples.length + '/' + BASELINE_FRAMES;
+                    } else if (hz > 0) {
+                        // Relative to baseline — needle stays where pitch IS
                         deltaHz  = hz - baselineHz;
                         pitchPos = Math.max(0.01, Math.min(0.99, 0.5 + deltaHz / (2 * DELTA_RANGE)));
                         hzLabel  = (deltaHz >= 0 ? '+' : '') + Math.round(deltaHz) + ' Hz';
@@ -995,7 +1013,7 @@
                     ctx.fillText('Lower', wx + 6, wy + wh / 2);
                     ctx.textAlign = 'center';
                     ctx.fillStyle = 'rgba(255,255,255,0.3)';
-                    ctx.fillText(baselineHz > 0 ? 'Start ' + baselineHz + 'Hz' : 'Start', cx, wy + wh / 2);
+                    ctx.fillText(baselineHz > 0 ? 'Start ' + baselineHz + 'Hz' : 'Calibrating…', cx, wy + wh / 2);
                     ctx.textAlign = 'right';
                     ctx.fillStyle = 'rgba(255,255,255,0.5)';
                     ctx.fillText('Higher', wx + ww - 6, wy + wh / 2);
